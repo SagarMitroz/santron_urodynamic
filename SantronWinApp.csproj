@@ -368,9 +368,7 @@
     </Compile>
     <Compile Include="EmgBleSource.cs" />
     <Compile Include="EmgLiteEngine.cs" />
-    <Compile Include="EmgLiteForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="EmgLiteForm.cs" />
     <Compile Include="EmgRmsFilter.cs" />
     <Compile Include="EmgSignalProcessor.cs" />
     <Compile Include="FilePreviewForm.cs">
