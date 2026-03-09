@@ -27,6 +27,7 @@ using SantronChart;
 using SantronReports;
 using SantronWinApp.IO;
 using SantronWinApp.Processing;
+using SantronWinApp.Services;
 using static MarkerService;
 using static SantronReports.LegacyUroReportPrinter;
 using static SantronWinApp.DocterList;
@@ -412,85 +413,7 @@ namespace SantronWinApp
             LoadVideoDevices();
 
             // Ensure setup is never null
-            ScaleAndColorModel setup = null;
-
-            try
-            {
-                setup = LoadScaleAndColorModel("DefaultSetup");
-
-                // Optional: log what was loaded
-                if (setup == null)
-                    Console.WriteLine("⚠️ Setup file not found or invalid. Using default setup.");
-            }
-            catch (Exception ex)
-            {
-                // You can also log to a file here if you want
-                MessageBox.Show("Error loading setup file: " + ex.Message + "\nUsing default setup.");
-            }
-
-            // ✅ Fallback if LoadScaleAndColorModel returned null
-            if (setup == null)
-            {
-                setup = new ScaleAndColorModel
-                {
-
-                    ChannelZero = "Pves",
-                    ChannelOne = "Pabd",
-                    ChannelTwo = "Pdet",
-                    ChannelThree = "Pura",
-                    ChannelFour = "Pclo",
-                    ChannelFive = "Vinf",
-                    ChannelSix = "Qvol",
-                    ChannelSeven = "Qura",
-                    ChannelEight = "EMG",
-                    ChannelNine = "Prpg",
-                    ChannelTen = "Pirp",
-                    ChannelEleven = "Lura",
-                    ChannelTwelve = "Pa1",
-                    ChannelThirteen = "Pa2",
-                    ChannelFourteen = "Pa3",
-                    //ChannelEight = "Ch8",
-                    PlotScaleZero = "100",
-                    PlotScaleOne = "100",
-                    PlotScaleTwo = "100",
-                    PlotScaleThree = "100",
-                    PlotScaleFour = "100",
-                    PlotScaleFive = "1000",
-                    PlotScaleSix = "500",
-                    PlotScaleSeven = "50",
-                    PlotScaleEight = "2000",
-                    PlotScaleNine = "100",
-                    PlotScaleTen = "100",
-                    PlotScaleEleven = "30cms",
-                    PlotScaleTwelve = "100",
-                    PlotScaleThirteen = "100",
-                    PlotScaleFourteen = "100",
-                    //PlotScaleEight = "1",
-
-                    ColorZero = "#0000FF",
-                    ColorOne = "#FF0000",
-                    ColorTwo = "#000000",
-                    ColorThree = "#FFD700",
-                    ColorFour = "#A9A9A9",
-                    ColorFive = "#800080",
-                    ColorSix = "#FFA500",
-                    ColorSeven = "#ADD8E6",
-                    ColorEight = "#008000",
-                    ColorNine = "#000000",
-                    ColorTen = "#FF0000",
-                    ColorEleven = "#800080",
-                    ColorTwelve = "#0000FF",
-                    ColorThirteen = "#FF0000",
-                    ColorFourteen = "#FFD700",
-                    //ColorEight = "#008080",
-
-                    BackgroundColor = "#FFFFFF",
-                    BladderSensation = 500000,
-                    GeneralPurose = 500000,
-                    ResponeMarkers = 500000,
-                    NumberOfScreen = "2"
-                };
-            }
+            ScaleAndColorModel setup = ScaleAndColorService.Load();
 
 
             _uiSlowWorkTimer = new System.Windows.Forms.Timer();
@@ -659,29 +582,6 @@ namespace SantronWinApp
             mainContainerPanel.Controls.Add(homePanel);
         }
 
-        //private void LoadHomeDesignDirect()
-        //{
-        //    // Load HomeScreen
-        //    HomeScreen home = new HomeScreen();
-
-        //    // Initialize the form so panel is created
-        //    home.TopLevel = false;
-        //    home.FormBorderStyle = FormBorderStyle.None;
-        //    home.Show();
-
-        //    // Take the HomeDesignPanel
-        //    Panel panel = home.HomeDesignPanel;
-
-        //    // Detach from HomeScreen
-        //    panel.Parent = null;
-
-        //    // Dock to entire MainForm
-        //    panel.Dock = DockStyle.Fill;
-
-        //    // Add directly to MainForm
-        //    this.Controls.Clear();
-        //    this.Controls.Add(panel);
-        //}
         private MenuStrip _menuStrip;
 
         private void CreateMenuStrip()
@@ -725,8 +625,7 @@ namespace SantronWinApp
 
             HideMainContent();
             CreateMenuStrip();
-           // menuStrip1.Renderer = new CustomMenuRenderer();
-
+          
             _screenMinutes = LoadScreenMinutes();
 
             CreateMainContentForPatient();
@@ -906,23 +805,6 @@ namespace SantronWinApp
             mainContentPanelGraphOnly.Visible = true;
         }
 
-        //private void ForceChartZero()
-        //{
-        //    if (_liveChart == null)
-        //        return;
-
-        //    double[] zero = new double[_liveChart.GetChannelCount()];
-        //    double t = 0;
-
-        //    // push 10 zero frames to flush old values
-        //    for (int i = 0; i < 10; i++)
-        //    {
-        //        t += 0.1;
-        //        _liveChart.AppendSample(zero, t);
-        //    }
-
-        //    _liveChart.Invalidate();
-        //}
 
 
 
@@ -1174,33 +1056,7 @@ namespace SantronWinApp
             }
         }
 
-        //private SystemSetupModel GetSystemSetData()
-        //{
-        //    try
-        //    {
-        //        string folder = Path.Combine(Application.StartupPath, "Saved Data", "SystemSetup");
-
-        //        if (!Directory.Exists(folder))
-        //            return null;
-
-        //        string[] files = Directory.GetFiles(folder, "*.dat");
-
-        //        if (files.Length == 0)
-        //            return null;
-
-        //        string filePath = files[0];
-
-        //        byte[] encrypted = File.ReadAllBytes(filePath);
-        //        string json = CryptoHelper.Decrypt(encrypted);
-
-        //        return JsonSerializer.Deserialize<SystemSetupModel>(json);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Load error: " + ex.Message);
-        //        return null;
-        //    }
-        //}
+        
 
         private SystemSetupModel _SystemSetup;
 
@@ -5264,7 +5120,8 @@ namespace SantronWinApp
         {
             try
             {
-                var setup = LoadScaleAndColorModel("DefaultSetup");
+                var setup = ScaleAndColorService.Load();
+
 
                 if (setup != null)
                 {
@@ -5514,52 +5371,7 @@ namespace SantronWinApp
         }
 
 
-        private ScaleAndColorModel LoadScaleAndColorModel(string setupName)
-        {
-            //string folder = Path.Combine(Application.StartupPath, "Saved Data", "ScaleAndColorSetup");
-            string folder = AppPathManager.GetFolderPath("ScaleAndColorSetup");
-
-            // make sure the folder exists
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            string filePath = Path.Combine(folder, setupName + ".dat");
-
-            // if requested file not found → try latest available
-            if (!File.Exists(filePath))
-            {
-                var files = Directory.GetFiles(folder, "*.dat")
-                                     .OrderByDescending(f => File.GetLastWriteTime(f))
-                                     .ToList();
-
-                if (files.Count == 0)
-                    return null; // no saved setups at all
-
-                filePath = files[0]; // pick the newest
-            }
-
-            try
-            {
-                // read and decrypt
-                byte[] encryptedData = File.ReadAllBytes(filePath);
-                string jsonData = CryptoHelper.Decrypt(encryptedData);
-
-                if (string.IsNullOrWhiteSpace(jsonData))
-                    return null;
-
-                jsonData = FixJsonForIntFields(jsonData);
-
-                // deserialize into your model
-                var model = System.Text.Json.JsonSerializer.Deserialize<ScaleAndColorModel>(jsonData);
-
-                return model;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error loading Scale And Color Setup: " + ex.Message);
-                return null;
-            }
-        }
+        
 
         //Start Code For Solve the "ScaleAndColorSetup" Error show every screen show this error now resolve add on 16-02-2026  //jsonData = FixJsonForIntFields(jsonData); add this in two methods
         private string FixJsonForIntFields(string json)
@@ -5741,17 +5553,9 @@ namespace SantronWinApp
                 _lblTimer.Left = panelGraph.ClientSize.Width - _lblTimer.Width - rightOffset;
             };
 
-            // --- Timer Setup ---
-            //_testTimer = new Timer { Interval = 1000 };
-            //_testTimer.Tick += (s, e) => UpdateTimerLabel();
-            //_testTimer.Start();
+            
+            var setup = ScaleAndColorService.Load();
 
-            //UpdateTimerLabel();
-            //UpdateButtons(recording: true, paused: false, canSave: false);
-
-            // configure lanes/graph
-            //var setup = LoadScaleAndColorModel("DefaultSetup");
-            var setup = LoadScaleAndColorModel("DefaultSetup");
             if (setup != null)
             {
                 _testMgr = new TestChannelManager(setup);
@@ -5962,7 +5766,7 @@ namespace SantronWinApp
             };
 
 
-            var setup = LoadScaleAndColorModel("DefaultSetup");
+            var setup = ScaleAndColorService.Load();
             if (setup != null)
             {
                 _testMgr = new TestChannelManager(setup);
@@ -6489,7 +6293,7 @@ namespace SantronWinApp
                 _lblTimer.Left = panelGraph.ClientSize.Width - _lblTimer.Width - rightOffset;
             };
 
-            var setup = LoadScaleAndColorModel("DefaultSetup");
+            var setup = ScaleAndColorService.Load();
             if (setup != null) ConfigureChartLanes(setup);
 
             int infusionTopOffset = 42;   // second line under timer (adjust if needed)
@@ -9176,24 +8980,6 @@ namespace SantronWinApp
         }
 
 
-
-
-
-        //Start Test Button Marun Color
-        //private void btnTestStart1_Click(object sender, EventArgs e)
-        //{
-        //    _recorded.Clear();
-        //    _isRecording = true;
-        //    _isPaused = false;
-        //    _pauseStartedAt = null;
-        //    _pausedTime = TimeSpan.Zero;
-        //    _testStartTime = DateTime.Now;
-
-        //    _testTimer.Start();
-        //    UpdateTimerLabel();
-        //    UpdateButtons(recording: true, paused: false, canSave: false);
-        //}
-
         private bool ShouldShowConfirmMessage(string testName)
         {
             if (string.IsNullOrWhiteSpace(testName))
@@ -9224,22 +9010,7 @@ namespace SantronWinApp
                 return;
             }
 
-            // If recording but currently paused -> resume (do not reset)
-            //if (_isRecording && _isPaused)
-            //{
-            //    _isPaused = false;
-            //    if (_pauseStartedAt.HasValue)
-            //    {
-            //        _pausedTime += (DateTime.Now - _pauseStartedAt.Value);
-            //        _pauseStartedAt = null;
-            //    }
-
-            //    _testTimer.Start();
-            //    UpdateTimerLabel();
-            //    UpdateButtons(recording: true, paused: false, canSave: false);
-            //    return;
-            //}
-
+           
             // If recording but currently paused -> resume (do not reset)
             if (_isRecording && _isPaused)
             {
@@ -11105,69 +10876,7 @@ namespace SantronWinApp
             }
         }
 
-        //Code for If Click on M button so Remove the first added marker this Marker Line not remove the  clicked marker line chnage on 14-02-2026
-
-        //private void Chart_RemoveMarkerOnClick(double clickedX)
-        //{
-        //    if (!_isMarkerRemoveMode)
-        //        return;
-
-        //    // find marker with T closest to clicked X
-        //    var marker = _liveChart.Markers
-        //        .OrderBy(m => Math.Abs(m.T - clickedX))
-        //        .FirstOrDefault();
-
-        //    // Threshold depends on sampling, 0.2 sec works best
-        //    if (marker != null && Math.Abs(marker.T - clickedX) < 0.2)
-        //    {
-        //        _liveChart.RemoveMarker(marker.Label);
-
-        //        //Code For "M" button click Only one Mark line remove 
-        //        _isMarkerRemoveMode = false;
-        //        _liveChart.ChartClicked -= Chart_RemoveMarkerOnClick;
-
-        //        Cursor = Cursors.Default;
-        //    }
-        //}
-
-
-        //End Code Remove Already Added Marked Click on "M" button and click Mark Lines so Remove the Lines add on 19/11/2025
-
-        //private void btnArtifactM_Click(object sender, EventArgs e)
-        //{
-        //    //_liveChart.ClearMarkers();
-
-        //    if (_r1.HasValue && _r2.HasValue)
-        //    {
-        //        double min = Math.Min(_r1.Value, _r2.Value);
-        //        double max = Math.Max(_r1.Value, _r2.Value);
-
-        //        //_liveChart.ClearMarkers();
-
-        //        //_liveChart.RemoveMarker("R1");
-        //        //_liveChart.RemoveMarker("R2");
-
-        //        //_liveChart.RemoveSamplesBetween(min, max);
-
-        //        _r1 = _r2 = null;
-        //    }
-
-        //    // Enable remove mode
-        //    _isMarkerRemoveMode = true;
-
-        //    //This code For Remove Mark Line Click Line Button and remove 
-        //    //_removeFsOnNextClick = true;
-        //    //_blockFsPlacement = true;
-        //    //_removeGpOnNextClick = true;
-        //    //_blockGpPlacement = true;
-
-
-        //    // subscribe Action<double>
-        //    _liveChart.ChartClicked -= Chart_RemoveMarkerOnClick;
-        //    _liveChart.ChartClicked += Chart_RemoveMarkerOnClick;
-
-        //    Cursor = Cursors.Hand;
-        //}
+        
 
         private void btnArtifactM_Click(object sender, EventArgs e)
         {
@@ -11180,16 +10889,7 @@ namespace SantronWinApp
             if (_artifactRanges.Count == 0)
                 return;
 
-            //Start this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
-            //foreach (var range in _artifactRanges)
-            //{
-            //    _liveChart.RemoveSamplesBetween(range.R1, range.R2);
-            //}
-
-            //Cursor = Cursors.Hand;
-
-            //ExitMarkerRemoveMode();
-            //End this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
+            
         }
 
 
@@ -11205,15 +10905,6 @@ namespace SantronWinApp
             if (_artifactRanges.Count == 0)
                 return;
 
-            //Start this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
-            //foreach (var range in _artifactRanges)
-            //{
-            //    _liveChart.RemoveSamplesBetween(range.R1, range.R2);
-            //}
-            //Cursor = Cursors.Hand;
-
-            //ExitMarkerRemoveMode();
-            //End this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
         }
 
         private void btnM6_Click(object sender, EventArgs e)
@@ -11228,25 +10919,10 @@ namespace SantronWinApp
             if (_artifactRanges.Count == 0)
                 return;
 
-            //Start this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
-            //foreach (var range in _artifactRanges)
-            //{
-            //    _liveChart.RemoveSamplesBetween(range.R1, range.R2);
-            //}
-            //Cursor = Cursors.Hand;
-
-            //ExitMarkerRemoveMode();
-            //End this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
+            
         }
 
-        //private List<Marker> _markers = new List<Marker>();
-
-        //public class Marker
-        //{
-        //    public double Time { get; set; }
-        //    public string Label { get; set; }
-        //    public Color Color { get; set; }
-        //}
+        
 
 
 
@@ -11516,13 +11192,6 @@ namespace SantronWinApp
                 MultiClick(sender);
             }
         }
-
-        //private void btnEventLE_Click(object sender, EventArgs e)
-        //{
-        //    _liveChart.AddMarker(_lastPlotT, "LE", Color.Green);
-
-        //    MultiClick(sender);
-        //}
 
 
 
@@ -14614,37 +14283,7 @@ namespace SantronWinApp
                 }
             }
 
-            //graphCfg.Samples = new List<ReportSample>();
-
-            //if (_recorded != null && _recorded.Count > 0)
-            //{
-            //    // Baseline per channel from first sample so each channel starts from 0 in print preview
-            //    double[] base0 = null;
-            //    if (_recorded[0].Values != null)
-            //        base0 = (double[])_recorded[0].Values.Clone();
-
-            //    for (int i = 0; i < _recorded.Count; i++)
-            //    {
-            //        var r = _recorded[i];
-            //        double[] copy = (r.Values != null) ? (double[])r.Values.Clone() : null;
-
-            //        if (copy != null && base0 != null)
-            //        {
-            //            int n = Math.Min(copy.Length, base0.Length);
-            //            for (int ch = 0; ch < n; ch++)
-            //            {
-            //                // Skip NaN/Infinity to avoid polluting output
-            //                double b = base0[ch];
-            //                if (!double.IsNaN(b) && !double.IsInfinity(b))
-            //                    copy[ch] = copy[ch] - b;
-            //            }
-            //        }
-
-            //        graphCfg.Samples.Add(new ReportSample { T = r.T, Values = copy });
-            //    }
-            //}
-
-
+          
             graphCfg.TestDef = _currentTestDef;
             graphCfg.ActiveIndices = (_activeIndices != null && _activeIndices.Length > 0)
                 ? (int[])_activeIndices.Clone()
@@ -14677,12 +14316,7 @@ namespace SantronWinApp
                 else
                     _currentPage = 1;
             };
-            //_doc.PrintPage += delegate (object sender, PrintPageEventArgs e)
-            //{
-            //    _printer.PrintPage(sender, e, _currentPage);
-            //    if (e.HasMorePages) _currentPage++;
-            //    else _currentPage = 1;
-            //};
+            
         }
 
 

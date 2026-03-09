@@ -361,6 +361,7 @@
     <Compile Include="DocterList.Designer.cs">
       <DependentUpon>DocterList.cs</DependentUpon>
     </Compile>
+    <Compile Include="Services\ScaleAndColorService.cs" />
     <Compile Include="UIControls\ElevatedPanel.cs">
       <SubType>Component</SubType>
     </Compile>
