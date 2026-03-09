@@ -335,19 +335,19 @@
     <Compile Include="Calibration\Calibration.cs" />
     <Compile Include="Calibration\CalibrationProfileFactory.cs" />
     <Compile Include="Controllers\CameraController.cs" />
-    <Compile Include="ChannelCol.cs" />
+    <Compile Include="Models\ChannelCol.cs" />
     <Compile Include="CheckBoxDropdown.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="DaqService.cs" />
-    <Compile Include="Decimator.cs" />
+    <Compile Include="DAQ\DaqService.cs" />
+    <Compile Include="DAQ\Decimator.cs" />
     <Compile Include="Default.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Default.Designer.cs">
       <DependentUpon>Default.cs</DependentUpon>
     </Compile>
-    <Compile Include="DeviceWatcher.cs" />
+    <Compile Include="Devices\DeviceWatcher.cs" />
     <Compile Include="DocterEditForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -360,17 +360,19 @@
     <Compile Include="DocterList.Designer.cs">
       <DependentUpon>DocterList.cs</DependentUpon>
     </Compile>
-    <Compile Include="ElevatedPanel.cs">
+    <Compile Include="EventButtonTextBoxPanel\ElevatedPanel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="ElevatedTextBox.cs">
+    <Compile Include="EventButtonTextBoxPanel\ElevatedTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="EmgBleSource.cs" />
-    <Compile Include="EmgLiteEngine.cs" />
-    <Compile Include="EmgLiteForm.cs" />
-    <Compile Include="EmgRmsFilter.cs" />
-    <Compile Include="EmgSignalProcessor.cs" />
+    <Compile Include="EMG\EmgBleSource.cs" />
+    <Compile Include="EMG\EmgLiteEngine.cs" />
+    <Compile Include="EMG\EmgLiteForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EMG\EmgRmsFilter.cs" />
+    <Compile Include="EMG\EmgSignalProcessor.cs" />
     <Compile Include="FilePreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -383,7 +385,7 @@
     <Compile Include="Doctor.Designer.cs">
       <DependentUpon>Doctor.cs</DependentUpon>
     </Compile>
-    <Compile Include="FlatAutoFitButton.cs">
+    <Compile Include="EventButtonTextBoxPanel\FlatAutoFitButton.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Form1.cs">
@@ -412,10 +414,10 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="GlimpseSecurityPolicy.cs" />
-    <Compile Include="GrayButton.cs">
+    <Compile Include="EventButtonTextBoxPanel\GrayButton.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="GreenButton.cs">
+    <Compile Include="EventButtonTextBoxPanel\GreenButton.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="HardwareMap.cs" />
@@ -450,7 +452,7 @@
       <DependentUpon>MasterForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MetricsComputer.cs" />
-    <Compile Include="Model.cs" />
+    <Compile Include="Models\Model.cs" />
     <Compile Include="MultiChannelLiveChart.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -590,7 +592,7 @@
     </Compile>
     <Compile Include="VoidingPhaseMetrics.cs" />
     <Compile Include="WinRtTaskExtensions.cs" />
-    <Compile Include="YellowButton.cs">
+    <Compile Include="EventButtonTextBoxPanel\YellowButton.cs">
       <SubType>Component</SubType>
     </Compile>
     <EmbeddedResource Include="AboutSantron.resx">
@@ -606,7 +608,9 @@
     <EmbeddedResource Include="DocterList.resx">
       <DependentUpon>DocterList.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="EmgLiteForm.resx" />
+    <EmbeddedResource Include="EMG\EmgLiteForm.resx">
+      <DependentUpon>EmgLiteForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="FilePreviewForm.resx">
       <DependentUpon>FilePreviewForm.cs</DependentUpon>
     </EmbeddedResource>
