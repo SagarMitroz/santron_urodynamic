@@ -276,7 +276,7 @@
             // 
             this.comboDevices.Location = new System.Drawing.Point(0, 0);
             this.comboDevices.Name = "comboDevices";
-            this.comboDevices.Size = new System.Drawing.Size(121, 21);
+            this.comboDevices.Size = new System.Drawing.Size(121, 24);
             this.comboDevices.TabIndex = 0;
             // 
             // panel1
@@ -345,7 +345,7 @@
             this.label8.ForeColor = System.Drawing.Color.DarkBlue;
             this.label8.Location = new System.Drawing.Point(1202, 5);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(136, 15);
+            this.label8.Size = new System.Drawing.Size(173, 20);
             this.label8.TabIndex = 45;
             this.label8.Text = "UPP Puller Arm Control";
             // 
@@ -356,7 +356,7 @@
             this.label7.ForeColor = System.Drawing.Color.DarkBlue;
             this.label7.Location = new System.Drawing.Point(1089, 4);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(79, 15);
+            this.label7.Size = new System.Drawing.Size(97, 20);
             this.label7.TabIndex = 47;
             this.label7.Text = "Select Graph";
             // 
@@ -367,7 +367,7 @@
             this.label6.ForeColor = System.Drawing.Color.DarkBlue;
             this.label6.Location = new System.Drawing.Point(963, 5);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(99, 15);
+            this.label6.Size = new System.Drawing.Size(125, 20);
             this.label6.TabIndex = 46;
             this.label6.Text = "Artifact Marking";
             // 
@@ -378,7 +378,7 @@
             this.label5.ForeColor = System.Drawing.Color.DarkBlue;
             this.label5.Location = new System.Drawing.Point(799, 6);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(144, 15);
+            this.label5.Size = new System.Drawing.Size(183, 20);
             this.label5.TabIndex = 45;
             this.label5.Text = "Channel Zeroing Buttons";
             // 
@@ -389,7 +389,7 @@
             this.label4.ForeColor = System.Drawing.Color.DarkBlue;
             this.label4.Location = new System.Drawing.Point(665, 5);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(86, 15);
+            this.label4.Size = new System.Drawing.Size(108, 20);
             this.label4.TabIndex = 44;
             this.label4.Text = "Event Buttons";
             // 
@@ -400,7 +400,7 @@
             this.label3.ForeColor = System.Drawing.Color.DarkBlue;
             this.label3.Location = new System.Drawing.Point(429, 4);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(130, 15);
+            this.label3.Size = new System.Drawing.Size(166, 20);
             this.label3.TabIndex = 43;
             this.label3.Text = "Pump Control Buttons";
             // 
@@ -411,7 +411,7 @@
             this.label2.ForeColor = System.Drawing.Color.DarkBlue;
             this.label2.Location = new System.Drawing.Point(212, 4);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(121, 15);
+            this.label2.Size = new System.Drawing.Size(154, 20);
             this.label2.TabIndex = 42;
             this.label2.Text = "Test Control Buttons";
             // 
@@ -422,7 +422,7 @@
             this.label1.ForeColor = System.Drawing.Color.DarkBlue;
             this.label1.Location = new System.Drawing.Point(20, 4);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(147, 15);
+            this.label1.Size = new System.Drawing.Size(185, 20);
             this.label1.TabIndex = 41;
             this.label1.Text = "Bladder Sensation Events";
             // 
@@ -1395,7 +1395,7 @@
             this.label10.ForeColor = System.Drawing.Color.DarkBlue;
             this.label10.Location = new System.Drawing.Point(933, -3);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(94, 19);
+            this.label10.Size = new System.Drawing.Size(112, 23);
             this.label10.TabIndex = 47;
             this.label10.Text = "Select Graph";
             this.label10.Click += new System.EventHandler(this.label10_Click);
@@ -1407,7 +1407,7 @@
             this.label11.ForeColor = System.Drawing.Color.DarkBlue;
             this.label11.Location = new System.Drawing.Point(1032, -3);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(119, 19);
+            this.label11.Size = new System.Drawing.Size(145, 23);
             this.label11.TabIndex = 46;
             this.label11.Text = "Artifact Marking";
             // 
@@ -1418,7 +1418,7 @@
             this.label12.ForeColor = System.Drawing.Color.DarkBlue;
             this.label12.Location = new System.Drawing.Point(623, -4);
             this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(119, 19);
+            this.label12.Size = new System.Drawing.Size(141, 23);
             this.label12.TabIndex = 45;
             this.label12.Text = "Channel Zeroing";
             // 
@@ -1429,7 +1429,7 @@
             this.label14.ForeColor = System.Drawing.Color.DarkBlue;
             this.label14.Location = new System.Drawing.Point(431, -3);
             this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(156, 19);
+            this.label14.Size = new System.Drawing.Size(189, 23);
             this.label14.TabIndex = 43;
             this.label14.Text = "Pump Control Buttons";
             // 
@@ -1440,7 +1440,7 @@
             this.label15.ForeColor = System.Drawing.Color.DarkBlue;
             this.label15.Location = new System.Drawing.Point(223, -2);
             this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(143, 19);
+            this.label15.Size = new System.Drawing.Size(173, 23);
             this.label15.TabIndex = 42;
             this.label15.Text = "Test Control Buttons";
             // 
@@ -1451,7 +1451,7 @@
             this.label13.ForeColor = System.Drawing.Color.DarkBlue;
             this.label13.Location = new System.Drawing.Point(793, -3);
             this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(99, 19);
+            this.label13.Size = new System.Drawing.Size(121, 23);
             this.label13.TabIndex = 44;
             this.label13.Text = "Event Buttons";
             // 
@@ -1462,7 +1462,7 @@
             this.label16.ForeColor = System.Drawing.Color.DarkBlue;
             this.label16.Location = new System.Drawing.Point(22, -3);
             this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(176, 19);
+            this.label16.Size = new System.Drawing.Size(211, 23);
             this.label16.TabIndex = 41;
             this.label16.Text = "Bladder Sensation Events";
             // 
@@ -1772,7 +1772,7 @@
             this.label18.ForeColor = System.Drawing.Color.DarkBlue;
             this.label18.Location = new System.Drawing.Point(231, -1);
             this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(94, 19);
+            this.label18.Size = new System.Drawing.Size(112, 23);
             this.label18.TabIndex = 47;
             this.label18.Text = "Select Graph";
             // 
@@ -1783,7 +1783,7 @@
             this.label19.ForeColor = System.Drawing.Color.DarkBlue;
             this.label19.Location = new System.Drawing.Point(339, -1);
             this.label19.Name = "label19";
-            this.label19.Size = new System.Drawing.Size(119, 19);
+            this.label19.Size = new System.Drawing.Size(145, 23);
             this.label19.TabIndex = 46;
             this.label19.Text = "Artifact Marking";
             // 
@@ -1794,7 +1794,7 @@
             this.label23.ForeColor = System.Drawing.Color.DarkBlue;
             this.label23.Location = new System.Drawing.Point(55, -1);
             this.label23.Name = "label23";
-            this.label23.Size = new System.Drawing.Size(143, 19);
+            this.label23.Size = new System.Drawing.Size(173, 23);
             this.label23.TabIndex = 42;
             this.label23.Text = "Test Control Buttons";
             // 
@@ -1932,7 +1932,7 @@
             this.label33.ForeColor = System.Drawing.Color.DarkBlue;
             this.label33.Location = new System.Drawing.Point(1117, -4);
             this.label33.Name = "label33";
-            this.label33.Size = new System.Drawing.Size(55, 19);
+            this.label33.Size = new System.Drawing.Size(65, 23);
             this.label33.TabIndex = 77;
             this.label33.Text = "Report";
             // 
@@ -2079,7 +2079,7 @@
             this.label28.ForeColor = System.Drawing.Color.DarkBlue;
             this.label28.Location = new System.Drawing.Point(1171, -3);
             this.label28.Name = "label28";
-            this.label28.Size = new System.Drawing.Size(94, 19);
+            this.label28.Size = new System.Drawing.Size(112, 23);
             this.label28.TabIndex = 79;
             this.label28.Text = "Select Graph";
             // 
@@ -2236,7 +2236,7 @@
             this.label24.ForeColor = System.Drawing.Color.DarkBlue;
             this.label24.Location = new System.Drawing.Point(597, -1);
             this.label24.Name = "label24";
-            this.label24.Size = new System.Drawing.Size(99, 19);
+            this.label24.Size = new System.Drawing.Size(121, 23);
             this.label24.TabIndex = 74;
             this.label24.Text = "Event Buttons";
             // 
@@ -2261,7 +2261,7 @@
             this.label25.ForeColor = System.Drawing.Color.DarkBlue;
             this.label25.Location = new System.Drawing.Point(985, -1);
             this.label25.Name = "label25";
-            this.label25.Size = new System.Drawing.Size(119, 19);
+            this.label25.Size = new System.Drawing.Size(145, 23);
             this.label25.TabIndex = 75;
             this.label25.Text = "Artifact Marking";
             // 
@@ -2337,7 +2337,7 @@
             this.label27.ForeColor = System.Drawing.Color.DarkBlue;
             this.label27.Location = new System.Drawing.Point(359, -1);
             this.label27.Name = "label27";
-            this.label27.Size = new System.Drawing.Size(156, 19);
+            this.label27.Size = new System.Drawing.Size(189, 23);
             this.label27.TabIndex = 66;
             this.label27.Text = "Pump Control Buttons";
             // 
@@ -2360,7 +2360,7 @@
             this.label17.ForeColor = System.Drawing.Color.DarkBlue;
             this.label17.Location = new System.Drawing.Point(775, -1);
             this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(167, 19);
+            this.label17.Size = new System.Drawing.Size(198, 23);
             this.label17.TabIndex = 45;
             this.label17.Text = "UPP Puller Arm Control";
             // 
@@ -2424,7 +2424,7 @@
             this.label22.ForeColor = System.Drawing.Color.DarkBlue;
             this.label22.Location = new System.Drawing.Point(217, -1);
             this.label22.Name = "label22";
-            this.label22.Size = new System.Drawing.Size(116, 19);
+            this.label22.Size = new System.Drawing.Size(139, 23);
             this.label22.TabIndex = 45;
             this.label22.Text = "Zeroing Buttons";
             // 
@@ -2435,7 +2435,7 @@
             this.label26.ForeColor = System.Drawing.Color.DarkBlue;
             this.label26.Location = new System.Drawing.Point(35, -1);
             this.label26.Name = "label26";
-            this.label26.Size = new System.Drawing.Size(143, 19);
+            this.label26.Size = new System.Drawing.Size(173, 23);
             this.label26.TabIndex = 42;
             this.label26.Text = "Test Control Buttons";
             // 
@@ -2594,7 +2594,7 @@
             this.label20.ForeColor = System.Drawing.Color.DarkBlue;
             this.label20.Location = new System.Drawing.Point(228, -1);
             this.label20.Name = "label20";
-            this.label20.Size = new System.Drawing.Size(55, 19);
+            this.label20.Size = new System.Drawing.Size(65, 23);
             this.label20.TabIndex = 46;
             this.label20.Text = "Report";
             // 
@@ -2605,7 +2605,7 @@
             this.label21.ForeColor = System.Drawing.Color.DarkBlue;
             this.label21.Location = new System.Drawing.Point(55, -1);
             this.label21.Name = "label21";
-            this.label21.Size = new System.Drawing.Size(143, 19);
+            this.label21.Size = new System.Drawing.Size(173, 23);
             this.label21.TabIndex = 42;
             this.label21.Text = "Test Control Buttons";
             // 
@@ -2688,7 +2688,7 @@
             this.label29.ForeColor = System.Drawing.Color.DarkBlue;
             this.label29.Location = new System.Drawing.Point(905, -4);
             this.label29.Name = "label29";
-            this.label29.Size = new System.Drawing.Size(55, 19);
+            this.label29.Size = new System.Drawing.Size(65, 23);
             this.label29.TabIndex = 88;
             this.label29.Text = "Report";
             // 
@@ -2712,7 +2712,7 @@
             this.label32.ForeColor = System.Drawing.Color.DarkBlue;
             this.label32.Location = new System.Drawing.Point(959, -3);
             this.label32.Name = "label32";
-            this.label32.Size = new System.Drawing.Size(94, 19);
+            this.label32.Size = new System.Drawing.Size(112, 23);
             this.label32.TabIndex = 90;
             this.label32.Text = "Select Graph";
             // 
@@ -2879,7 +2879,7 @@
             this.label9.ForeColor = System.Drawing.Color.DarkBlue;
             this.label9.Location = new System.Drawing.Point(723, -4);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(176, 19);
+            this.label9.Size = new System.Drawing.Size(211, 23);
             this.label9.TabIndex = 78;
             this.label9.Text = "Bladder Sensation Events";
             // 
@@ -2996,7 +2996,7 @@
             this.label30.ForeColor = System.Drawing.Color.DarkBlue;
             this.label30.Location = new System.Drawing.Point(437, -1);
             this.label30.Name = "label30";
-            this.label30.Size = new System.Drawing.Size(99, 19);
+            this.label30.Size = new System.Drawing.Size(121, 23);
             this.label30.TabIndex = 74;
             this.label30.Text = "Event Buttons";
             // 
@@ -3021,7 +3021,7 @@
             this.label31.ForeColor = System.Drawing.Color.DarkBlue;
             this.label31.Location = new System.Drawing.Point(588, -1);
             this.label31.Name = "label31";
-            this.label31.Size = new System.Drawing.Size(119, 19);
+            this.label31.Size = new System.Drawing.Size(145, 23);
             this.label31.TabIndex = 75;
             this.label31.Text = "Artifact Marking";
             // 
@@ -3136,7 +3136,7 @@
             this.label34.ForeColor = System.Drawing.Color.DarkBlue;
             this.label34.Location = new System.Drawing.Point(217, -1);
             this.label34.Name = "label34";
-            this.label34.Size = new System.Drawing.Size(116, 19);
+            this.label34.Size = new System.Drawing.Size(139, 23);
             this.label34.TabIndex = 45;
             this.label34.Text = "Zeroing Buttons";
             // 
@@ -3147,7 +3147,7 @@
             this.label35.ForeColor = System.Drawing.Color.DarkBlue;
             this.label35.Location = new System.Drawing.Point(35, -1);
             this.label35.Name = "label35";
-            this.label35.Size = new System.Drawing.Size(143, 19);
+            this.label35.Size = new System.Drawing.Size(173, 23);
             this.label35.TabIndex = 42;
             this.label35.Text = "Test Control Buttons";
             // 
@@ -3184,7 +3184,7 @@
             this.label36.ForeColor = System.Drawing.Color.White;
             this.label36.Location = new System.Drawing.Point(485, 93);
             this.label36.Name = "label36";
-            this.label36.Size = new System.Drawing.Size(301, 26);
+            this.label36.Size = new System.Drawing.Size(374, 31);
             this.label36.TabIndex = 79;
             this.label36.Text = "Demo Mode: Press “Start Test”";
             this.label36.Click += new System.EventHandler(this.label36_Click);
@@ -3236,7 +3236,7 @@
             this.label38.ForeColor = System.Drawing.Color.White;
             this.label38.Location = new System.Drawing.Point(61, 60);
             this.label38.Name = "label38";
-            this.label38.Size = new System.Drawing.Size(326, 29);
+            this.label38.Size = new System.Drawing.Size(395, 36);
             this.label38.TabIndex = 82;
             this.label38.Text = "Please connect the device.";
             // 
@@ -3248,7 +3248,7 @@
             this.label37.ForeColor = System.Drawing.Color.White;
             this.label37.Location = new System.Drawing.Point(88, 24);
             this.label37.Name = "label37";
-            this.label37.Size = new System.Drawing.Size(271, 29);
+            this.label37.Size = new System.Drawing.Size(330, 36);
             this.label37.TabIndex = 81;
             this.label37.Text = "Device not connected.";
             this.label37.Click += new System.EventHandler(this.label37_Click);
@@ -3265,7 +3265,7 @@
             this.panel8.Controls.Add(this.btnSpeedDown);
             this.panel8.Controls.Add(this.btnSpeedUp);
             this.panel8.Controls.Add(this.btnPStart);
-            this.panel8.Location = new System.Drawing.Point(3, 33);
+            this.panel8.Location = new System.Drawing.Point(3, 51);
             this.panel8.Name = "panel8";
             this.panel8.Size = new System.Drawing.Size(1364, 40);
             this.panel8.TabIndex = 82;
