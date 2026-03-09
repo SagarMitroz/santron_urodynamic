@@ -331,10 +331,10 @@
       <DependentUpon>AboutSantron.cs</DependentUpon>
     </Compile>
     <Compile Include="AppPathManager.cs" />
-    <Compile Include="ArmController.cs" />
+    <Compile Include="Controllers\ArmController.cs" />
     <Compile Include="Calibration\Calibration.cs" />
     <Compile Include="Calibration\CalibrationProfileFactory.cs" />
-    <Compile Include="CameraController.cs" />
+    <Compile Include="Controllers\CameraController.cs" />
     <Compile Include="ChannelCol.cs" />
     <Compile Include="CheckBoxDropdown.cs">
       <SubType>UserControl</SubType>
@@ -516,7 +516,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="PumpController.cs" />
+    <Compile Include="Controllers\PumpController.cs" />
     <Compile Include="PvrDialog.cs">
       <SubType>Form</SubType>
     </Compile>
