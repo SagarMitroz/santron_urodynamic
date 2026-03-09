@@ -3890,7 +3890,14 @@ namespace SantronWinApp
                                  System.Globalization.CultureInfo.InvariantCulture, out newMax))
                 return;
 
-            _liveChart.SetChannelScaleByName(laneName, 0, newMax);
+            if (laneName.Equals("EMG", StringComparison.OrdinalIgnoreCase))
+            {
+                _liveChart.SetChannelScaleByName(laneName, -newMax, newMax);
+            }
+            else
+            {
+                _liveChart.SetChannelScaleByName(laneName, 0, newMax);
+            }
 
             // Start Code For Change First Three ComboBox Value if Change "PVES" Channel ComboBox on 09/10/2025 At 10:54 Night  
             string[] pressureGroup = { "Pves", "Pabd", "Pirp", "Pura", "Pdet", "Pclo", "Prpg" };
@@ -3920,7 +3927,14 @@ namespace SantronWinApp
                         }
 
                         // Update chart scale for that lane
-                        _liveChart.SetChannelScaleByName(lane, 0, newMax);
+                        if (laneName.Equals("EMG", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _liveChart.SetChannelScaleByName(laneName, -newMax, newMax);
+                        }
+                        else
+                        {
+                            _liveChart.SetChannelScaleByName(laneName, 0, newMax);
+                        }
                     }
                 }
             }
