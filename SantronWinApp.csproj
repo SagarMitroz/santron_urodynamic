@@ -8,7 +8,7 @@
     <ProjectGuid>{8B201BB1-BC57-4881-B0FE-641EBB463A92}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>SantronWinApp</RootNamespace>
-    <AssemblyName>Santron Urodynamics</AssemblyName>
+    <AssemblyName>SantronWinApp</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -306,8 +306,9 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Windows">
-      <HintPath>C:\Program Files (x86)\Windows Kits\8.1\References\CommonConfiguration\Neutral\Annotated\Windows.winmd</HintPath>
+    <Reference Include="Windows, Version=255.255.255.255, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.19041.0\Windows.winmd</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="Xamarin.Forms.Core, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -446,6 +447,7 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MainMenuBuilder.cs" />
     <Compile Include="MarkerService.cs" />
     <Compile Include="MasterForm.cs" />
     <Compile Include="MasterForm.Designer.cs">
