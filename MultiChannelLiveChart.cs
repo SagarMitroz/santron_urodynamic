@@ -967,14 +967,70 @@ namespace SantronChart
                                             // 🔹 NEW: Draw vertical connector between current positive and negative
                                             if (pxCol % 2 == 0)
                                             {
-                                                e.Graphics.DrawLine(pen, curPos, curNeg);
+                                                e.Graphics.DrawLine(pen, prevNeg, curPos);
                                             }
+                                            //e.Graphics.DrawLine(pen, curPos, curNeg);
+                                           // e.Graphics.DrawLine(pen, prevNeg, curPos);
                                         }
 
                                         _prevArr[c] = curPos;
                                         _hasPrevArr[c] = true;
                                     }
+                                    //double vTrace;
+                                    //// Check if this is a high-speed channel - use high-speed buffer instead
+                                    //if (_highSpeedChannels.Contains(c))
+                                    //{
+                                    //    // Calculate time for this pixel column
+                                    //    double tStart = _viewStartSec;
+                                    //    double tEnd = _viewStartSec + _visibleDurationSec;
+                                    //    double timeAtPixel = tStart + (pxCol / plot.Width) * (tEnd - tStart);
+                                    //    // Find value from high-speed buffer at this time
+                                    //    vTrace = GetHighSpeedValue(c, timeAtPixel);
+                                    //    if (double.IsNaN(vTrace))
+                                    //        vTrace = _samples[j1b].Values[c]; // Fallback to regular sample
+                                    //}
+                                    //else
+                                    //{
+                                    //    vTrace = _samples[j1b].Values[c]; // stable trace
+                                    //}
 
+                                    //// Check if this channel should be mirrored
+                                    //bool shouldMirror = _mirroredChannels.Contains(_channels[c].Name);
+
+                                    //if (shouldMirror)
+                                    //{
+                                    //    double absValue = Math.Abs(vTrace);
+                                    //    float yPos = MapValueToLaneY(absValue, _channels[c], laneTop, laneHeight);
+                                    //    float yNeg = MapValueToLaneY(-absValue, _channels[c], laneTop, laneHeight);
+
+                                    //    // Validate
+                                    //    if (float.IsNaN(yPos) || float.IsInfinity(yPos) || Math.Abs(yPos) > 100000 ||
+                                    //        float.IsNaN(yNeg) || float.IsInfinity(yNeg) || Math.Abs(yNeg) > 100000)
+                                    //    {
+                                    //        _hasPrevArr[c] = false;
+                                    //        continue;
+                                    //    }
+
+                                    //    PointF curPos = new PointF(x, yPos);
+                                    //    PointF curNeg = new PointF(x, yNeg);
+
+                                    //    if (_hasPrevArr[c] && !float.IsNaN(_prevArr[c].Y))
+                                    //    {
+                                    //        float laneCenter = laneTop + laneHeight / 2f;
+                                    //        float prevPosDistFromCenter = _prevArr[c].Y - laneCenter;
+                                    //        float prevNegY = laneCenter - prevPosDistFromCenter;
+                                    //        PointF prevNeg = new PointF(_prevArr[c].X, prevNegY);
+
+                                    //        // ✅ Draw vertical line at current x between pos and neg
+                                    //        e.Graphics.DrawLine(pen, curPos, curNeg);
+
+                                    //        // ✅ Draw vertical line at previous x between pos and neg  
+                                    //       // e.Graphics.DrawLine(pen, _prevArr[c], prevNeg);
+                                    //    }
+
+                                    //    _prevArr[c] = curPos;
+                                    //    _hasPrevArr[c] = true;
+                                    //}
                                     else
                                     {
                                         // Normal single-line plotting
