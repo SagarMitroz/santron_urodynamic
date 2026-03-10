@@ -323,7 +323,7 @@ namespace SantronWinApp
                 if (SendStartCommand)
                 {
                     RaiseState("SENDING START...");
-                    await SendControlTextAsync("START", ct).ConfigureAwait(false);
+                    //await SendControlTextAsync("START", ct).ConfigureAwait(false);
                     Log("START command sent.");
                 }
 
@@ -472,7 +472,7 @@ namespace SantronWinApp
                 {
                     try
                     {
-                        await SendControlTextAsync("STOP").ConfigureAwait(false);
+                        //await SendControlTextAsync("STOP").ConfigureAwait(false);
                         Log("STOP command sent");
                     }
                     catch (Exception ex) { Log("STOP command failed (ignored): " + ex.Message); }
@@ -486,27 +486,27 @@ namespace SantronWinApp
             Log("StopAsync: Completed");
         }
 
-        public Task SendControlTextAsync(string text, CancellationToken ct = default)
-        {
-            if (text == null) throw new ArgumentNullException(nameof(text));
-            return SendControlAsync(Encoding.ASCII.GetBytes(text), ct);
-        }
+        //public Task SendControlTextAsync(string text, CancellationToken ct = default)
+        //{
+        //    if (text == null) throw new ArgumentNullException(nameof(text));
+        //    return SendControlAsync(Encoding.ASCII.GetBytes(text), ct);
+        //}
 
-        public async Task SendControlAsync(byte[] payload, CancellationToken ct = default)
-        {
-            if (_controlChar == null) throw new InvalidOperationException("Control characteristic not available.");
-            if (payload == null || payload.Length == 0) throw new ArgumentException("Control payload is empty.", nameof(payload));
+        //public async Task SendControlAsync(byte[] payload, CancellationToken ct = default)
+        //{
+        //    if (_controlChar == null) throw new InvalidOperationException("Control characteristic not available.");
+        //    if (payload == null || payload.Length == 0) throw new ArgumentException("Control payload is empty.", nameof(payload));
 
-            var writer = new DataWriter();
-            writer.WriteBytes(payload);
+        //    var writer = new DataWriter();
+        //    writer.WriteBytes(payload);
 
-            var status = await _controlChar.WriteValueAsync(writer.DetachBuffer(), GattWriteOption.WriteWithResponse)
-                                           .ToTask().ConfigureAwait(false);
+        //    var status = await _controlChar.WriteValueAsync(writer.DetachBuffer(), GattWriteOption.WriteWithResponse)
+        //                                   .ToTask().ConfigureAwait(false);
 
-            Log("CONTROL write: " + status + " Payload=" + BitConverter.ToString(payload));
-            if (status != GattCommunicationStatus.Success)
-                throw new InvalidOperationException($"Control write failed (Status={status}).");
-        }
+        //    Log("CONTROL write: " + status + " Payload=" + BitConverter.ToString(payload));
+        //    if (status != GattCommunicationStatus.Success)
+        //        throw new InvalidOperationException($"Control write failed (Status={status}).");
+        //}
 
         // NEW: Method to read battery level on demand
         public async Task<int?> ReadBatteryLevelAsync()
