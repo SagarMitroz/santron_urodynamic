@@ -331,7 +331,9 @@
     <Compile Include="AboutSantron.Designer.cs">
       <DependentUpon>AboutSantron.cs</DependentUpon>
     </Compile>
-    <Compile Include="AppPathManager.cs" />
+    <Compile Include="Helper\AppPathManager.cs" />
+    <Compile Include="Helper\CryptoHelper.cs" />
+    <Compile Include="Services\BaseSetupService.cs" />
     <Compile Include="Controllers\ArmController.cs" />
     <Compile Include="Calibration\Calibration.cs" />
     <Compile Include="Calibration\CalibrationProfileFactory.cs" />
@@ -362,6 +364,7 @@
       <DependentUpon>DocterList.cs</DependentUpon>
     </Compile>
     <Compile Include="Services\ScaleAndColorService.cs" />
+    <Compile Include="Services\SystemSetupService.cs" />
     <Compile Include="UIControls\ElevatedPanel.cs">
       <SubType>Component</SubType>
     </Compile>

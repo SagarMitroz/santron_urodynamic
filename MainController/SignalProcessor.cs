@@ -1,4 +1,5 @@
 ﻿using NationalInstruments.Restricted;
+using SantronWinApp.Helper;
 using SantronWinApp.Processing;
 using System;
 using System.Collections.Generic;
@@ -137,7 +138,7 @@ namespace SantronWinApp
                     if (File.Exists(specificFile))
                     {
                         byte[] encrypted = File.ReadAllBytes(specificFile);
-                        string json = SystemSetup.CryptoHelper.Decrypt(encrypted);
+                        string json = CryptoHelper.Decrypt(encrypted);
                         return JsonSerializer.Deserialize<SystemSetup.SystemSetupModel>(json);
                     }
                 }
@@ -149,7 +150,7 @@ namespace SantronWinApp
 
                 string filePath = files[0];
                 byte[] encryptedData = File.ReadAllBytes(filePath);
-                string jsonData = SystemSetup.CryptoHelper.Decrypt(encryptedData);
+                string jsonData = CryptoHelper.Decrypt(encryptedData);
 
                 return JsonSerializer.Deserialize<SystemSetup.SystemSetupModel>(jsonData);
             }
