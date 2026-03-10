@@ -1192,7 +1192,33 @@ namespace SantronWinApp
             }
         }
 
-        
+        //private SystemSetupModel GetSystemSetData()
+        //{
+        //    try
+        //    {
+        //        string folder = Path.Combine(Application.StartupPath, "Saved Data", "SystemSetup");
+
+        //        if (!Directory.Exists(folder))
+        //            return null;
+
+        //        string[] files = Directory.GetFiles(folder, "*.dat");
+
+        //        if (files.Length == 0)
+        //            return null;
+
+        //        string filePath = files[0];
+
+        //        byte[] encrypted = File.ReadAllBytes(filePath);
+        //        string json = CryptoHelper.Decrypt(encrypted);
+
+        //        return JsonSerializer.Deserialize<SystemSetupModel>(json);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Load error: " + ex.Message);
+        //        return null;
+        //    }
+        //}
 
         private SystemSetupModel _SystemSetup;
 
