@@ -66,7 +66,6 @@ namespace SantronWinApp
         // BLE EMG Source Toggle
         private const bool _useBleEmg = true; // Set to true to use Bluetooth EMG instead of DAQ
         //======= EMG ============
-
         private string _currentMainId;
         private string _currentPatientNo;
         private string _currentTestName;
@@ -83,54 +82,20 @@ namespace SantronWinApp
         private const double FLOW_THRESHOLD = 0.5; // ignore tiny noise
 
 
-
-        private const int InfusionRateMin = 5;
-        private const int InfusionRateMax = 100;
-        private int _infusionRate = 20;
-
-        private SignalProcessor _signalProcessor;
-
-        private ArmController _arm;
-        private int ClampInfusionRate(int value)
-        {
-            if (value < InfusionRateMin) return InfusionRateMin;
-            if (value > InfusionRateMax) return InfusionRateMax;
-            return value;
-        }
-
-        private void ApplyInfusionRateToPump()
-        {
-            if (_orch?.Pump == null) return;
-            _orch.Pump.SetRate((int)_infusionRate);
-        }
-
-        //private PumpController _pump;
-        //private int _currentSpeed = 0;   // 0–100
-
-
-
         private int _currentPage = 1;
         private LegacyUroReportPrinter _printer;
         private PrintDocument _doc;
 
         private System.Windows.Forms.ComboBox comboDevices;
 
-
-
         //  private enum TestKind { Default, Uroflowmetry, UroflowmetryEMG, Cystometry, CystoUroflowEMG, UPP }
         private ComboBox _cbTest;
         private int[] _activeIndices = Array.Empty<int>();   // which columns to plot in current view
-                                                             // column layout in your pipeline/files:
-                                                             //private const int PVES = 0, PABD = 1, PDET = 2, VINF = 3, QVOL = 4, FLOW_UPP = 5, EMG = 6;
-
-
-
+                                                            
 
         private FilterInfoCollection videoDevices;
         private VideoCaptureDevice videoSource;
         OverlayForm _overlay;
-
-
 
         private MenuStrip menuStrip1;
         private ToolStrip toolStrip1;
@@ -150,15 +115,12 @@ namespace SantronWinApp
         private readonly ChannelSettings[] channelSettings;
 
 
-
         // --- Layout roots ---
         private MenuStrip _menu;
         private Panel _root;
         private Panel _right;
 
         // ========== UI ==========
-
-
         private TestChannelManager _testMgr;
         private TestOrchestrator _orch;
         private CalibrationProfile _profile;
@@ -172,13 +134,11 @@ namespace SantronWinApp
         private int _screenMinutes;
         private int _warmupCounter = 0;
 
-
         private bool _orchSubscribed;
         private bool _daqSubscribed;
 
         private readonly object _rawLock = new object();
         private double[] _lastRawCounts;
-
 
         // Recording state/timer
         private bool _isRecording = false;
@@ -189,7 +149,6 @@ namespace SantronWinApp
         private DateTime _testStartTime;
         private TimeSpan _pausedTime = TimeSpan.Zero;
         private DateTime? _pauseStartedAt = null;
-
 
         private double _lastPlottedT = 0.0;     // last absolute time we plotted (seconds)
         private double _resumeOffset = 0.0;     // added to incoming frame.T after reconnect
@@ -205,8 +164,6 @@ namespace SantronWinApp
         private DateTime _orchStartedAt = DateTime.MinValue;
 
         private double _firstTOut = double.NaN;
-
-        //  private double[] _lastRawCounts = null;
 
         // Reconnect re-entrancy guard
         private bool _isReconnecting = false;
@@ -227,8 +184,6 @@ namespace SantronWinApp
         // Adjust to your device. If you use full 7 channels use "Dev1/ai0:6"; for quick probe use single chan.
         private const string AI_CONFIG = "Dev1/ai0:6"; // lightweight probe to avoid heavy start
 
-
-
         // --- UI decoupling to prevent 1-2 sec lag ---
         private System.Windows.Forms.Timer _uiSlowWorkTimer;
         private volatile double[] _uiLastVals;
@@ -238,10 +193,8 @@ namespace SantronWinApp
         private bool _wallStartSet;
         private DateTime _firstFrameUtc = DateTime.MinValue;
 
-
         // fields (top of MainForm)
         private DeviceWatcher _watcher;
-
 
         PatientRecord currentTest;
         private string currenttest;
@@ -258,29 +211,10 @@ namespace SantronWinApp
         private double _timeBaseShiftSeconds = 0.0;
         private bool _timeBaseArmed = false;
 
-        // Replace tuples with a simple class
-        public class SampleRecord
-        {
-            public double T;
-            public double[] Values;
-
-            public SampleRecord(double t, double[] values)
-            {
-                T = t;
-                Values = values;
-            }
-
-            public double TimeSec { get; internal set; }
-        }
         private readonly List<SampleRecord> _recorded = new List<SampleRecord>();
         private TestChannelManager.TestDefinition _currentTestDef = null;
 
-        // Manage event subscription cleanly
-        // private bool _orchSubscribed = false;
-
         private PatientRecord _currentPatient = null;  // who is selected now
-
-
 
         private const int WM_VSCROLL = 0x0115;
         private const int SB_LINEUP = 2;
@@ -293,24 +227,6 @@ namespace SantronWinApp
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
-
-        // --- System-check thresholds (demo defaults; load from SysSetup if you have it) ---
-        //private int P0 = 120;   // pressure low threshold for Pves
-        //private int P1 = 120;   // pressure low threshold for Pabd/Pirp
-        //private int P6 = 120;   // pressure low threshold for Pura
-        //private int JF = 3500;  // uroflow Jar Full threshold
-        //private int ChangeBottle = 600; // infusion bottle missing/change threshold
-        //private int U1 = 100;   // UPP not connected
-        //private int UH = 1800;  // UPP arm pulled high threshold
-
-        //// Fixed bounds from the spec (counts domain)
-        //private const int RAW_MIN_SMALL = 10;
-        //private const int RAW_MIN_20 = 20;
-        //private const int RAW_MIN_25 = 25;
-        //private const int RAW_PRESSURE_FAULT = 2050;
-        //private const int RAW_FAULT_3900 = 3900;
-        //private const int RAW_EMG_FAULT = 16000;
-
         // Thresholds per Error Document (verify system-setup may override)
         private const double RAW_MIN_20 = 20.0;
         private const double RAW_MIN_SMALL = 10.0;   // doc: "greater than 10"
@@ -318,15 +234,6 @@ namespace SantronWinApp
         private const double RAW_PRESSURE_FAULT = 2050.0; // doc: >2050 => faulty
         private const double RAW_FAULT_3900 = 3900.0;
         private const double RAW_EMG_FAULT = 16000.0; // doc: >16000 => EMG faulty
-
-        // Other system-setup variables — make sure these are populated from settings
-        //private double P0 = 50.0; 
-        //private double P1 = 50.0;
-        //private double P6 = 50.0;
-        //private double JF = 3000.0;         
-        //private double ChangeBottle = 500.0; 
-        //private double U1 = 10.0;          
-        //private double UH = 2000.0;         
 
         private double P0 = 50.0;
         private double P1;
@@ -355,6 +262,164 @@ namespace SantronWinApp
         private double[] _lastFrameRaw = null;
         private bool _haltPlottingDueToAlert = false;  // true => skip AppendSample and recording
 
+        // Advisory when signal hugs scale max: threshold & hold-time
+        private const double SCALE_ADVISORY_FRAC = 0.95;   // 95% of scale
+        private const double SCALE_ADVISORY_HOLD_S = 1.0;  // sustain for >= 2s
+        private const int V = 1;
+
+        // Track when each lane first exceeded the threshold (key: lane name)
+        private readonly Dictionary<string, double> _advisoryStartT =
+            new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+        // overlay width controls
+        private int _scaleComboMinWidth = 30;   // minimum visible width
+        private int _scaleComboExtraWidth = 28;  // add on top of chart's right-band width
+
+        private int BladderColor;
+        private int GPColor;
+        private int ResponseColor;
+
+        private IPumpController _pump;
+
+        private string _selectedPatientNo;
+        private string _selectedPatientId;
+
+        private Panel patientCardsPanel;
+        private ToolTip toolTip1 = new ToolTip();
+
+        // Load System Setup
+        private SystemSetupModel _SystemSetup;
+
+        private double _lastChartEmitT = double.NegativeInfinity;
+        private double[] _valsBuf;
+        // ===== CPP tick sampling for computations/report =====
+        private const double CPP_TICK_SEC = 0.25; // constant[2]=250ms => 4Hz
+        private double _lastRecordedTickT = double.NegativeInfinity;
+
+        private double _lastVinfDisplayed = 0.0;
+        private bool _autoPausedByInfusionAlert = false;
+        private bool _autoPauseInProgress = false;
+        private double _vinfNewBottleStartEng = double.NaN;
+        private bool _vinfWaitingForFirstFrame = false;
+        private double _vinfNewBottleStartRaw = 0.0;
+
+        private TestOrchestrator _attachedOrch = null;
+        private IDaqService _attachedDaq = null;
+
+        private bool _isDemoMode = false;
+
+        // Add this one line with your other class fields
+        private bool _isLiveTestRunning = false;
+
+        private bool _isUpdateMode = false;
+
+        //For Save Images in Live Test
+        private Dictionary<Image, ImageNoteData> _imageNotesMap = new Dictionary<Image, ImageNoteData>();
+        private Image _currentImage = null;
+        private TextBox txtRemark;
+        private CheckBox chkImportant;
+
+        private Label _lblInfusion;
+
+        //Start Code For Camera
+        private PictureBox cameraPreview;
+        private Button captureButton;
+        private FlowLayoutPanel capturedImagesPanel;
+        private Image dummyImage;
+        private Button toggleCameraButton;
+        private Button brightnessButton;
+        private Button contrastButton;
+        private bool isCameraOn = false;
+
+        private TrackBar brightnessSlider;
+        private Form brightnessForm;
+        private Image originalImage;
+        // private Button _btnMarker;
+        private Label _lblTimer;
+        private Button _btnStart, _btnPause, _btnResume, _btnStop, _btnSave, _btnOpen, _btnMarker;
+
+        private Panel previewHost;
+
+        private List<Image> _capturedImages = new List<Image>();
+
+        private string _lastSavedTestFilePath;
+
+        //EMG CODE START
+        private ToolStripStatusLabel _batteryStatusLabel;
+        private Timer _batteryCheckTimer;
+
+        private TestOrchestrator _testOrchestrator;
+
+        private const int MAX_TEST_DURATION_MINUTES = 90;
+        private const int MAX_TEST_DURATION_MINUTES_UROFLOWMETRY = 10;
+
+        private bool _isPumpRunning = false;
+        private bool _pumpWasRunningBeforePause = false;
+
+        private int _markerCounter = 0;
+
+        private double? _r1 = null;
+        private double? _r2 = null;
+
+        private bool _isMarkerRemoveMode;
+
+        private string _currentSavedTestPath;
+
+        private DeviceState _lastPopupState;
+        private bool _suppressPopupOnStartup = true;
+        //Review mode marker
+        private bool _isMarkerPlacementMode = false;
+        private string _pendingMarkerLabel = "";
+        private Color _pendingMarkerColor = Color.Black;
+        private bool _isMarkerPlacementModeForCount = false;
+        private string _pendingMarkerLabelForCount = "";
+        private Color _pendingMarkerColorForCount = Color.Black;
+
+        private TestMode _activemode;
+
+        private HospitalAndDocterModel _hospitalSetup;
+        private PatientRecord _patientSetup;
+        private PrintPreviewDialog _previewDialog;
+        private PrintPreviewControl _previewControl;
+
+
+
+        //Pump Controller
+        private const int InfusionRateMin = 5;
+        private const int InfusionRateMax = 100;
+        private int _infusionRate = 20;
+
+        private SignalProcessor _signalProcessor;
+
+        private ArmController _arm;
+        private int ClampInfusionRate(int value)
+        {
+            if (value < InfusionRateMin) return InfusionRateMin;
+            if (value > InfusionRateMax) return InfusionRateMax;
+            return value;
+        }
+
+        private void ApplyInfusionRateToPump()
+        {
+            if (_orch?.Pump == null) return;
+            _orch.Pump.SetRate((int)_infusionRate);
+        }
+
+        // Replace tuples with a simple class
+        public class SampleRecord
+        {
+            public double T;
+            public double[] Values;
+
+            public SampleRecord(double t, double[] values)
+            {
+                T = t;
+                Values = values;
+            }
+
+            public double TimeSec { get; internal set; }
+        }
+       
 
         //This Code Start for Graph Test DropDown Valuse show
         //Refe for Line No.1328 Method **private void BuildScaleMaxOverlays()** and 
@@ -395,47 +460,9 @@ namespace SantronWinApp
             { "Qura", "ml/sec" },
             { "EMG", "uV" }
         };
+
         private readonly Dictionary<string, ComboBox> _scaleCombos = new Dictionary<string, ComboBox>(StringComparer.OrdinalIgnoreCase);
 
-        // Advisory when signal hugs scale max: threshold & hold-time
-        private const double SCALE_ADVISORY_FRAC = 0.95;   // 95% of scale
-        private const double SCALE_ADVISORY_HOLD_S = 1.0;  // sustain for >= 2s
-        private const int V = 1;
-
-        // Track when each lane first exceeded the threshold (key: lane name)
-        private readonly Dictionary<string, double> _advisoryStartT =
-            new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-
-        // overlay width controls
-        private int _scaleComboMinWidth = 30;   // minimum visible width
-        private int _scaleComboExtraWidth = 28;  // add on top of chart's right-band width
-
-        private int BladderColor;
-        private int GPColor;
-        private int ResponseColor;
-
-
-        //public MainForm()
-        //{
-        //    InitializeComponent();
-        //    Constants();
-
-        //    //EnsureGraphReady();
-        //    var setup = LoadScaleAndColorModel("DefaultSetup");
-        //    _testMgr = new TestChannelManager(setup);
-        //    channelSettings = LoadChannelSettings();
-
-        //    this.WindowState = FormWindowState.Maximized;
-        //    this.Text = "Santron PC based Urodynamics USB, India Visit us at www.santronmeditronic.com, email:santronmeditronic@gmail.com";
-
-
-        //    this.AutoScaleMode = AutoScaleMode.Dpi;
-        //    this.AutoSize = false;
-        //    this.MinimumSize = new Size(900, 600);
-        //}
-
-
-        private IPumpController _pump;
         public MainForm()
         {
             InitializeComponent();
@@ -573,8 +600,6 @@ namespace SantronWinApp
             this.MinimumSize = new Size(900, 600);
         }
 
-        private string _selectedPatientNo;
-        private string _selectedPatientId;
 
         //Start This Code For PatientForm To Open Test on 08/10/2025
         public void TriggerStartTest(PatientRecord record)
@@ -706,33 +731,8 @@ namespace SantronWinApp
             mainContainerPanel.Controls.Add(homePanel);
         }
 
-        //private void LoadHomeDesignDirect()
-        //{
-        //    // Load HomeScreen
-        //    HomeScreen home = new HomeScreen();
 
-        //    // Initialize the form so panel is created
-        //    home.TopLevel = false;
-        //    home.FormBorderStyle = FormBorderStyle.None;
-        //    home.Show();
-
-        //    // Take the HomeDesignPanel
-        //    Panel panel = home.HomeDesignPanel;
-
-        //    // Detach from HomeScreen
-        //    panel.Parent = null;
-
-        //    // Dock to entire MainForm
-        //    panel.Dock = DockStyle.Fill;
-
-        //    // Add directly to MainForm
-        //    this.Controls.Clear();
-        //    this.Controls.Add(panel);
-        //}
-
-
-        private Panel patientCardsPanel;
-        private ToolTip toolTip1 = new ToolTip();
+        
         private void MainForm_Load(object sender, EventArgs e)
         {
             //Start code for AUTO-STOP Measn Auto Savedtest only for UROFLOW tests 12/12/2025
@@ -753,15 +753,6 @@ namespace SantronWinApp
 
             panel8.Visible = false;
 
-            //foreach (ToolStripItem item in menuStrip1.Items)
-            //{
-            //    if (item.Name == "settingsButton")
-            //    {
-            //        item.Enabled = false;
-            //        item.ForeColor = Color.Gray;
-            //        break;
-            //    }
-            //}
 
             EnableMenuStripItems();
 
@@ -918,32 +909,11 @@ namespace SantronWinApp
                 mainContentPanelPatient.Dispose();
                 mainContentPanelPatient = null;
             }
-
-
             CreateMainContentOnlyGraph();
             mainContentPanelGraphOnly.Visible = true;
         }
 
-        //private void ForceChartZero()
-        //{
-        //    if (_liveChart == null)
-        //        return;
-
-        //    double[] zero = new double[_liveChart.GetChannelCount()];
-        //    double t = 0;
-
-        //    // push 10 zero frames to flush old values
-        //    for (int i = 0; i < 10; i++)
-        //    {
-        //        t += 0.1;
-        //        _liveChart.AppendSample(zero, t);
-        //    }
-
-        //    _liveChart.Invalidate();
-        //}
-
-
-
+       
         //For Logo Buttun
         private void btnShowPatients_Click(object sender, EventArgs e)
         {
@@ -1033,36 +1003,6 @@ namespace SantronWinApp
         //Code For Show Review Mode Test time show buttons
         private void ShowPrintButtons()
         {
-            //foreach (ToolStripItem item in menuStrip1.Items)
-            //{
-            //    // disable these specific items
-            //    if (item.Name == "patientButton" ||
-            //        item.Name == "menuButton" ||
-            //        //item.Name == "settingsButton" ||
-            //        //item.Name == "infoButton" ||
-            //        item.Name == "FileMenu" ||
-            //        item.Name == "SetupMenu" ||
-            //        item.Name == "HelpMenu" ||
-            //        item.Name == "PumpArmMenu" ||
-            //        item.Name == "⛯Menu")
-            //    {
-            //        item.Enabled = false;
-            //        item.ForeColor = Color.Gray; // visual feedback (optional)
-            //    }
-
-            //    // ✅ settingsButton MUST stay ENABLED
-            //    if (item.Name == "settingsButton")
-            //    {
-            //        item.Enabled = true;
-            //        item.ForeColor = Color.White;
-            //    }
-            //    else if (item.Name == "infoButton")
-            //    {
-            //        item.Enabled = true;
-            //        item.ForeColor = Color.White;
-            //    }
-            //}
-
             foreach (ToolStripItem item in menuStrip1.Items)
             {
                 if (item.Name == "patientButton" ||
@@ -1192,35 +1132,7 @@ namespace SantronWinApp
             }
         }
 
-        //private SystemSetupModel GetSystemSetData()
-        //{
-        //    try
-        //    {
-        //        string folder = Path.Combine(Application.StartupPath, "Saved Data", "SystemSetup");
-
-        //        if (!Directory.Exists(folder))
-        //            return null;
-
-        //        string[] files = Directory.GetFiles(folder, "*.dat");
-
-        //        if (files.Length == 0)
-        //            return null;
-
-        //        string filePath = files[0];
-
-        //        byte[] encrypted = File.ReadAllBytes(filePath);
-        //        string json = CryptoHelper.Decrypt(encrypted);
-
-        //        return JsonSerializer.Deserialize<SystemSetupModel>(json);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Load error: " + ex.Message);
-        //        return null;
-        //    }
-        //}
-
-        private SystemSetupModel _SystemSetup;
+       
 
         private void LoadSystemSetup()
         {
@@ -1309,67 +1221,7 @@ namespace SantronWinApp
             _liveChart.Start();
         }
 
-        //private void LoadGraph()
-        //{
-        //    LoadSystemSetup();
-
-        //    int pumpConst1 = 1500;
-        //    int pumpConst2 = 2000;
-        //    int defaultInfusion = 20;
-
-        //    // If SystemSetup loaded → use dynamic values
-        //    if (_SystemSetup != null)
-        //    {
-        //        pumpConst1 = Convert.ToInt32(_SystemSetup.Constant1);
-        //        pumpConst2 = Convert.ToInt32(_SystemSetup.Constant2);
-        //        defaultInfusion = Convert.ToInt32(_SystemSetup.DefualInfusion);
-        //    }
-
-        //    _infusionRate = ClampInfusionRate(defaultInfusion);
-
-        //    bool isResume = _resumeArmed;
-
-
-        //    DetachOrch();
-        //    // Ensure orchestrator exists and is wired to chart
-
-        //        var daq = new DaqService();
-        //        var cal = new Calibration(_profile);
-        //        if (_signalProcessor == null || !isResume)
-        //        _signalProcessor = new SignalProcessor(cal, sampleRateHz: 400.0, displayHz: 4.0);
-        //    IPumpController pump = new PumpController(pumpConst1, pumpConst2);
-        //        _orch = new TestOrchestrator(daq, _signalProcessor, pump, new SysSetupStore());
-
-
-        //    AttachOrch();
-        //    try { _orch.Start(); } catch { }
-
-        //    if (_currentTestDef == null && _testMgr != null)
-        //        _currentTestDef = _testMgr.GetDefinition(currenttest);
-
-        //    _activemode = GetModeFromTestName(currenttest);
-        //    _signalProcessor.SetMode(_activemode);
-
-        //    _signalProcessor.SetFlowWindowFromConstant(_profile.Constants[6]);
-
-        //    _signalProcessor.SetEmgWindowMs(300);
-        //    _signalProcessor.SetSmoothingAlpha(0.08);
-
-        //    if (!isResume)
-        //        _signalProcessor.ZeroNow();
-
-        //    _liveChart.SetMinutesPerScreen(_screenMinutes);
-        //    _liveChart.UsePixelBuckets = true;
-        //    _liveChart.DrawEnvelopeInLive = false; // you can set true if you want the min/max envelope in live view
-
-        //    // _liveChart.SetFps(30);
-        //    _liveChart.SetVisibleDuration(_screenMinutes * 60.0); //60
-        //    _liveChart.Start();
-        //}
-
-
-
-
+       
         // Start Code For Show the Dianamic Constants Values on 28/10/2025
         private string GetSystemSetupFolder()
         {
@@ -1428,8 +1280,7 @@ namespace SantronWinApp
 
         //Start code 26-02-2026
 
-        // Add this field at the class level
-        private SystemSetupModel _systemSetupModel;
+      
         public void ReloadSystemSetupAndConstants()
         {
             try
@@ -1556,91 +1407,14 @@ namespace SantronWinApp
         }
 
 
-
-
-        //Commit on 17/12/2025
-        //private void Constants()
-        //{
-        //    // Defaults (your originals)
-        //    var defaultConstants = new int[] { 1030, 1030, 1994, 2038, 250, 0, 250 };
-        //    double sg1 = 1.0;
-        //    int uppCount = 2084;
-        //    var offsetsCounts = new double[7];
-        //    var constants = new int[7];
-
-        //    string folder = GetSystemSetupFolder();
-        //    string usedFile = null;
-        //    SystemSetupModel setup = null;
-
-        //    string candidate = FindMostRecentDatFile();
-
-        //    if (candidate != null)
-        //    {
-        //        if (TryLoadSystemSetupFromFile(candidate, out SystemSetupModel m, out string reason))
-        //        {
-        //            setup = m;
-        //            usedFile = candidate;
-        //        }
-        //        else
-        //        {
-        //            var allFiles = Directory.GetFiles(folder, "*.dat", SearchOption.TopDirectoryOnly)
-        //                                    .OrderByDescending(f => File.GetLastWriteTimeUtc(f))
-        //                                    .ToArray();
-
-        //            foreach (var f in allFiles)
-        //            {
-        //                if (f == candidate) continue; 
-        //                if (TryLoadSystemSetupFromFile(f, out SystemSetupModel mm, out string r))
-        //                {
-        //                    setup = mm;
-        //                    usedFile = f;
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    if (setup != null)
-        //    {
-        //        constants[0] = int.TryParse(setup.Pves, out int c0) ? c0 : defaultConstants[0];
-        //        constants[1] = int.TryParse(setup.Pabd, out int c1) ? c1 : defaultConstants[1];
-        //        constants[2] = int.TryParse(setup.Flow, out int c2) ? c2 : defaultConstants[2];
-        //        constants[3] = int.TryParse(setup.Vinf, out int c3) ? c3 : defaultConstants[3];
-        //        constants[4] = int.TryParse(setup.EMG, out int c4) ? c4 : defaultConstants[4];
-        //        constants[5] = int.TryParse(setup.UPP, out int c5) ? c5 : defaultConstants[5];
-        //        constants[6] = int.TryParse(setup.Rate, out int c6) ? c6 : defaultConstants[6];
-        //        //constants[6] = int.TryParse(setup.EMG, out int c6) ? c6 : defaultConstants[6];
-
-        //        sg1 = double.TryParse(setup.SpGravity, out double sgParsed) ? sgParsed : sg1;
-        //        uppCount = int.TryParse(setup.UPP, out int uppParsed) ? uppParsed : uppCount;
-
-        //    }
-        //    else
-        //    {
-        //        Array.Copy(defaultConstants, constants, 7);
-        //        //MessageBox.Show($"No valid SystemSetup .dat file found in:\n{folder}\nUsing default constants.", "SystemSetup Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        //    }
-
-        //    //if (usedFile != null)
-        //    //{
-        //    //    MessageBox.Show($"Loaded system setup from:\n{usedFile}", "SystemSetup Loaded", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        //    //}
-
-        //    _profile = CalibrationProfileFactory.FromLegacy(constants, offsetsCounts, uppCount, sg1);
-        //}
+       
         // Start Code For Show the Dianamic Constants Values on 28/10/2025
 
 
 
-        // private double _lastPlotT = double.NegativeInfinity;
-        private double _lastChartEmitT = double.NegativeInfinity;
-        private double[] _valsBuf;
-        // ===== CPP tick sampling for computations/report =====
-        private const double CPP_TICK_SEC = 0.25; // constant[2]=250ms => 4Hz
-        private double _lastRecordedTickT = double.NegativeInfinity;
 
         //Bhushan 03-03-2026
-        private double _lastVinfDisplayed = 0.0;
+
         private void OnDisplayFrame(SampleFrame f)
         {
             if (!_acceptLiveFrames) return;
@@ -1808,97 +1582,6 @@ namespace SantronWinApp
                 _liveChart.AppendSample(vals, correctedT);
                 /// ------------------------------------------------------------------
 
-                //if (len > 3)
-                //    _lastVinfDisplayed = vals[3];
-
-                ////Bhushan 03-03-2026 END
-
-                //// Record AFTER offset applied — saved data matches display
-                //if (_isRecording)
-                //{
-                //    double[] copy = new double[len];
-                //    Array.Copy(vals, copy, len);
-                //    _recorded.Add(new SampleRecord(tOut, copy));
-                //}
-
-                //// 🔹 FIX: When using BLE EMG, inject the latest BLE value into DAQ frame
-                //if (_useBleEmg)
-                //{
-                //    var channelNames = _liveChart.GetChannelNames();
-                //    for (int i = 0; i < channelNames.Count && i < vals.Length; i++)
-                //    {
-                //        if (channelNames[i].Equals("EMG", StringComparison.OrdinalIgnoreCase))
-                //        {
-                //            // Use the latest filtered EMG value from BLE
-                //            double bleEmgValue = _filteredEmgValue; // This should already exist in your code
-
-                //            // Mirror effect: send positive value
-                //            vals[i] = Math.Abs(bleEmgValue);
-                //            break;
-                //        }
-                //    }
-                //}
-
-                //// Send single merged sample with DAQ + BLE data
-                //_liveChart.AppendSample(vals, correctedT);
-
-                //// If BLE EMG, send mirrored samples with tiny time offset
-                //System.Diagnostics.Debug.WriteLine($"[MIRROR CHECK] _useBleEmg={_useBleEmg}");
-
-                //if (_useBleEmg)
-                //{
-                //    var channelNames = _liveChart.GetChannelNames();
-                //    int emgIdx = -1;
-
-                //    System.Diagnostics.Debug.WriteLine($"[MIRROR] Searching for EMG in {channelNames.Count} channels");
-
-                //    for (int i = 0; i < channelNames.Count; i++)
-                //    {
-                //        System.Diagnostics.Debug.WriteLine($"[MIRROR] Channel[{i}] = '{channelNames[i]}'");
-                //        if (channelNames[i].Equals("EMG", StringComparison.OrdinalIgnoreCase))
-                //        {
-                //            emgIdx = i;
-                //            System.Diagnostics.Debug.WriteLine($"[MIRROR] Found EMG at index {emgIdx}");
-                //            break;
-                //        }
-                //    }
-
-                //    if (emgIdx >= 0)
-                //    {
-                //        double emgValue = _filteredEmgValue;
-                //        System.Diagnostics.Debug.WriteLine($"[MIRROR] EMG value={emgValue:F1}, abs={Math.Abs(emgValue):F1}");
-
-                //        // Send negative mirror first
-                //        double[] valsNeg = (double[])vals.Clone();
-                //        valsNeg[emgIdx] = -Math.Abs(emgValue);
-
-                //        System.Diagnostics.Debug.WriteLine($"[MIRROR NEG] Sending: [{string.Join(", ", valsNeg.Select(v => v.ToString("F1")))}] at t={correctedT:F3}");
-                //        _liveChart.AppendSample(valsNeg, correctedT);
-
-                //        // Send positive mirror with tiny offset (0.001 sec)
-                //        double[] valsPos = (double[])vals.Clone();
-                //        valsPos[emgIdx] = Math.Abs(emgValue);
-
-                //        System.Diagnostics.Debug.WriteLine($"[MIRROR POS] Sending: [{string.Join(", ", valsPos.Select(v => v.ToString("F1")))}] at t={correctedT + 0.001:F3}");
-                //        _liveChart.AppendSample(valsPos, correctedT + 0.001);
-                //    }
-                //    else
-                //    {
-                //        System.Diagnostics.Debug.WriteLine($"[MIRROR ERROR] EMG channel not found! Sending normal sample");
-                //        _liveChart.AppendSample(vals, correctedT);
-                //    }
-                //}
-                //else
-                //{
-                //    System.Diagnostics.Debug.WriteLine($"[MIRROR] BLE disabled, sending normal DAQ sample");
-                //    // Normal DAQ mode - single sample
-                //    _liveChart.AppendSample(vals, correctedT);
-                //}
-
-
-
-                //// - ----------------------- change end ---------------------------
-
                 // Defer heavy work to UI timer (prevents 1–2 sec lag)
                 _uiLastVals = (double[])vals.Clone();
                 _uiLastT = tOut;
@@ -1936,181 +1619,6 @@ namespace SantronWinApp
             {
             }
         }
-
-        //private void OnDisplayFrame(SampleFrame f)
-        //{
-        //    if (!_acceptLiveFrames) return;
-        //    if (_isPlaybackMode) return;
-        //    if (_isPaused) return;
-        //    if (_activeIndices == null || _activeIndices.Length == 0) return;
-        //    if (f.Values == null) return;
-
-        //    try
-        //    {
-        //        int len = _activeIndices.Length;
-
-        //        if (_valsBuf == null || _valsBuf.Length != len)
-        //            _valsBuf = new double[len];
-
-        //        double[] vals = _valsBuf;
-
-        //        for (int i = 0; i < len; i++)
-        //        {
-        //            int idx = _activeIndices[i];
-
-        //            // Do NOT kill the whole frame if one index is wrong.
-        //            // Use NaN so chart / checks can ignore it safely.
-        //            if (idx < 0 || idx >= f.Values.Length)
-        //            {
-        //                vals[i] = double.NaN;
-        //                continue;
-        //            }
-
-        //            vals[i] = f.Values[idx];
-        //        }
-
-        //        _plotRateHz = _signalProcessor.DisplayRateHz;
-
-        //        double tOut = f.T;
-
-        //        if (_firstFrameUtc == DateTime.MinValue)
-        //        {
-        //            _firstFrameUtc = DateTime.UtcNow;
-        //            _firstTOut = tOut;
-        //            PerfTrace.Log("LAG", $"Init: firstTOut={_firstTOut:F2}s");
-        //        }
-
-        //        double wall = (DateTime.UtcNow - _firstFrameUtc).TotalSeconds;
-        //        double tRel = tOut - _firstTOut;               // time progressed in data stream
-        //        double lag = wall - tRel;                      // +ve means UI behind data
-
-        //        PerfTrace.EveryMs("LAG", 1000, () => $"wall={wall:F2}s tRel={tRel:F2}s lag={lag:F2}s (tOut={tOut:F2}s)");
-
-
-        //        if (_resumeArmed)
-        //        {
-        //            _resumeShiftSeconds = _resumeOffset - tOut;
-        //            _resumeArmed = false;
-
-        //            // Important: prevent gating after time-shift
-        //            _lastChartEmitT = double.NegativeInfinity;
-        //        }
-
-
-
-        //        tOut += _resumeShiftSeconds;
-
-        //        // If requested, re-zero X-axis time on the very next frame.
-        //        // Fixes: demo mode/new test continues time from previous session.
-        //        if (_timeBaseArmed)
-        //        {
-        //            _timeBaseShiftSeconds = -tOut;     // make first plotted sample start at 0.00 sec
-        //            _timeBaseArmed = false;
-
-        //            // reset clamps/gates because time jumped
-        //            _lastPlotT = double.NegativeInfinity;
-        //            _lastChartEmitT = double.NegativeInfinity;
-        //            _lastRecordedTickT = double.NegativeInfinity;
-        //        }
-
-        //        // Apply session time shift so chart X-axis starts from 0
-        //        tOut += _timeBaseShiftSeconds;
-
-        //        if (tOut <= _lastPlotT)
-        //            tOut = _lastPlotT + (1.0 / Math.Max(1.0, _plotRateHz));
-
-        //        _lastPlotT = tOut;
-
-        //        // Feed chart at the processor display rate (your new design: 4 Hz).
-        //        // Using a small tolerance to avoid double-emits due to clock adjustments.
-        //        double chartDt = 1.0 / Math.Max(1.0, _plotRateHz); // e.g. 0.25 sec at 4 Hz
-        //        double minEmitDt = chartDt * 0.80;                 // 20% tolerance
-
-        //        if (tOut - _lastChartEmitT < minEmitDt)
-        //            return;
-
-        //        _lastChartEmitT = tOut;
-
-
-        //        if (_isRecording)
-        //        {
-        //            // Record EVERY frame that arrives from the processor
-        //            // This ensures review mode matches live mode exactly
-        //            double[] copy = new double[len];
-        //            Array.Copy(vals, copy, len);
-        //            _recorded.Add(new SampleRecord(tOut, copy));
-        //        }
-
-
-
-        //        //Bhushan 03-03-2026 Start
-
-        //        double correctedT = tOut - _timeOffsetAfterPause;   
-
-        //        // ---- VINF continuation: apply offset so plot doesn't reset to 0 after bottle change ----
-        //        //if (_vinfResumeOffset != 0.0 && len > 3)
-        //        //{
-        //        //    vals[3] += _vinfResumeOffset;
-        //        //}
-        //        // Always track last displayed VINF for next pause
-        //        if (len > 3) _lastVinfEngValue = vals[3];
-
-        //        if (len > 3 && _vinfResumeOffset != 0.0)
-        //        {
-        //            if (_vinfWaitingForFirstFrame)
-        //            {
-        //                _vinfResumeOffset = _vinfResumeOffset - vals[3];
-        //                _vinfWaitingForFirstFrame = false;
-        //            }
-        //            vals[3] += _vinfResumeOffset;
-        //        }
-
-        //        if (len > 3)
-        //            _lastVinfDisplayed = vals[3];
-
-        //        //Bhushan 03-03-2026 END
-
-        //        _liveChart.AppendSample(vals, correctedT);
-
-
-
-        //        // Defer heavy work to UI timer (prevents 1–2 sec lag)
-        //        _uiLastVals = (double[])vals.Clone();
-        //        _uiLastT = tOut;
-        //        System.Threading.Interlocked.Exchange(ref _uiWorkPending, 1);
-
-
-        //        if (_uiStartUtc == DateTime.MinValue)
-        //        {
-        //            _uiStartUtc = DateTime.UtcNow;
-        //            _uiFirstT = f.T;
-        //        }
-
-        //        wall = (DateTime.UtcNow - _uiStartUtc).TotalSeconds;
-        //        tRel = f.T - _uiFirstT;
-        //        PerfTrace.EveryMs("UILAG", 1000, () => $"wall={wall:F2}s uiRel={tRel:F2}s wall-ui={wall - tRel:F2}s");
-
-
-        //        PerfTrace.EveryMs("UI", 1000, () =>
-        //        {
-        //            lag = (DateTime.UtcNow - _orchStartedAt).TotalSeconds - tOut;
-        //            return $"tOut={tOut:F2}s lagVsWall={lag:F2}s";
-        //        });
-
-        //        if (_monitorNoFlow && _isRecording)
-        //        {
-        //            double qvol = f.Values[2];
-        //            if (Math.Abs(qvol - _lastVolumeValue) > FLOW_THRESHOLD)
-        //            {
-        //                _lastMovementTime = DateTime.Now;
-        //                _lastVolumeValue = qvol;
-        //            }
-        //        }
-        //    }
-        //    catch
-        //    {
-        //    }
-        //}
 
         // x-axis time to 0
         private void ArmTimeZero()
@@ -2168,97 +1676,9 @@ namespace SantronWinApp
 
 
 
-        //Bhushan Comment On 05-01-2026
-        //private void OnDisplayFrame(SampleFrame f)
-        //{
-        //    // --- fast exits ---
-        //    if (!_acceptLiveFrames) return;
-        //    if (_isPlaybackMode) return;
-        //    if (_isPaused) return;
-        //    if (_activeIndices == null || _activeIndices.Length == 0) return;
-
-        //    try
-        //    {
-        //        // --- extract active channel values ---
-        //        int len = _activeIndices.Length;
-        //        double[] vals = new double[len];
-
-        //        for (int i = 0; i < len; i++)
-        //        {
-        //            int idx = _activeIndices[i];
-        //            vals[i] = f.Values[idx];
-        //        }
-
-        //        // --- establish UNIFORM plotting clock ---
-        //        if (_resumeArmed)
-        //        {
-        //            _lastPlottedT = _resumeOffset;
-        //            _resumeArmed = false;
-        //        }
-
-        //        _plotRateHz = _signalProcessor.DisplayRateHz;
-
-        //        // in OnDisplayFrame
-        //        _lastPlottedT += 1.0 / _plotRateHz;
-        //        double tOut = _lastPlottedT;
-        //       // _lastPlottedT = 0.0;
-        //       // double tOut = f.T;
-        //        // --- enforce monotonic time (critical) ---
-        //        //if (tOut <= _lastPlotT)
-        //        //    return;
-
-        //        _lastPlotT = tOut;
-
-        //        // --- recording ---
-        //        if (_isRecording)
-        //        {
-        //            double[] copy = new double[len];
-        //            Array.Copy(vals, copy, len);
-        //            _recorded.Add(new SampleRecord(tOut, copy));
-        //        }
-
-        //        // --- plot FIRST (never block plotting) ---
-        //        _liveChart.AppendSample(vals, tOut);
-
-
-        //        if ((_frameCounter++ & 3) == 0)
-        //        {
-        //            try
-        //            {
-        //                RunLiveSystemChecks_RAW(_lastRawCounts);
-        //                UpdateScaleAdvisories(vals, tOut);
-        //            }
-        //            catch
-        //            {
-        //                // swallow or log
-        //            }
-        //        }
-
-        //        // --- AUTO-STOP logic (unchanged, safe) ---
-        //        if (_monitorNoFlow && _isRecording)
-        //        {
-        //            double qvol = f.Values[2]; // QVOL channel
-
-        //            if (Math.Abs(qvol - _lastVolumeValue) > FLOW_THRESHOLD)
-        //            {
-        //                _lastMovementTime = DateTime.Now;
-        //                _lastVolumeValue = qvol;
-        //            }
-        //        }
-        //    }
-        //    catch
-        //    {
-        //        // swallow or log as needed
-        //    }
-        //}
-
-
 
         //Bhushan 03-03-2026 Start 
-        private bool _autoPausedByInfusionAlert = false;
-        private bool _autoPauseInProgress = false;
-        private double _vinfNewBottleStartEng = double.NaN;
-        private bool _vinfWaitingForFirstFrame = false;
+       
         private void PauseAndResumeWithPopup()
         {
             if (_autoPauseInProgress) return;
@@ -2329,7 +1749,6 @@ namespace SantronWinApp
             _autoPauseInProgress = false;
         }
 
-        private double _vinfNewBottleStartRaw = 0.0;
 
         private void ShowBottleChangeDialog()
         {
@@ -2726,41 +2145,7 @@ namespace SantronWinApp
                 }
             }
 
-            //if (IsTestRunning()) 
-            //{
-            //    double negPressureThresholdCm = -10.0;
-
-            //    // Channel 0 (Pves) negative check
-            //    if (0 < raw.Length)
-            //    {
-            //        double pvesEng = ConvertCountsToPressureIfAvailable(raw[0], 0); // helper below will fall back
-            //        if (pvesEng < negPressureThresholdCm)
-            //        {
-            //            SetAlertAndMark(LaneNameOrEmpty(0), "Check for Catheter slip (Pves showing large negative)");
-            //        }
-            //    }
-
-            //    // Channel 1 (Pabd) negative check
-            //    if (1 < raw.Length)
-            //    {
-            //        double pabdEng = ConvertCountsToPressureIfAvailable(raw[1], 1);
-            //        if (pabdEng < negPressureThresholdCm)
-            //        {
-            //            SetAlertAndMark(LaneNameOrEmpty(1), "Check Rectal catheter slip or Balloon leaking (Pabd negative)");
-            //        }
-            //    }
-
-            //    // Channel 6 (Pura) negative check (for UPP test / urethral slip)
-            //    if (6 < raw.Length)
-            //    {
-            //        double puraEng = ConvertCountsToPressureIfAvailable(raw[6], 6);
-            //        if (puraEng < negPressureThresholdCm)
-            //        {
-            //            SetAlertAndMark(LaneNameOrEmpty(6), "Check Urethral catheter slip (Pura negative)");
-            //        }
-            //    }
-            //}
-
+           
             if (IsTestRunning())
             {
                 double negPressureThresholdCm = -10.0;
@@ -2805,16 +2190,8 @@ namespace SantronWinApp
 
         // ---------- Helpers used above ----------
 
-        // If you already have a counts->engineering-unit converter, call it.
-        // This helper will try to call your converter if present, otherwise returns the raw value
-        // (useful if your raw[] already carries engineering units).
         private double ConvertCountsToPressureIfAvailable(double counts, int channel)
         {
-            // If your project has a conversion function, use it here. Example:
-            // return CountsToCmH2O(counts, channel);
-            //
-            // Otherwise assume 'counts' is already in engineering units (cmH2O) and return it.
-            // Adjust this function to your real conversion routine.
             try
             {
                 if (this.GetType().GetMethod("CountsToCmH2O", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public) != null)
@@ -2853,10 +2230,6 @@ namespace SantronWinApp
 
         private bool ValidatePreTestConditions()
         {
-            // System.Diagnostics.Debug.WriteLine($"ValidatePreTestConditions called at {DateTime.Now:HH:mm:ss.fff}");
-            // System.Diagnostics.Debug.WriteLine($"_lastRawCounts is null: {_lastRawCounts == null}");
-            // System.Diagnostics.Debug.WriteLine($"_lastRawCounts Length: {_lastRawCounts?.Length ?? 0}");
-            // No hardware snapshot yet
             if (_lastRawCounts == null || _lastRawCounts.Length == 0)
             {
                 // Try to get data by waiting briefly
@@ -2986,95 +2359,6 @@ namespace SantronWinApp
             return true;
         }
 
-
-        //Start Error Code For Pratik Sir comment on 05/12/2025
-
-        //private void RunLiveSystemChecks_RAW(double[] raw)
-        //{
-        //    if (_liveChart == null) return;
-        //    _liveChart.ClearAllAlerts();
-
-        //    if (raw == null || raw.Length == 0) return;
-
-        //    // Which NI channels must be OK for this test?
-        //    int[] toCheck = GetInputChannelsToCheckForTest(currenttest);
-        //    bool hasAlerts = false;
-
-        //    for (int i = 0; i < toCheck.Length; i++)
-        //    {
-        //        int ch = toCheck[i];
-        //        if (ch < 0 || ch >= raw.Length) continue;
-
-        //        double v = raw[ch];
-        //        string laneName = LaneNameForChannelIndex(ch, currenttest);
-        //        if (string.IsNullOrEmpty(laneName)) continue; // if not displayed, skip
-
-        //        // Per-channel rules (counts-domain as per spec)
-        //        switch (ch)
-        //        {
-        //            // 0: Pves (pressure)
-        //            case 0:
-        //                if (v < RAW_MIN_20) { _liveChart.SetLaneAlert(laneName, "Pves sensor not connected"); }
-        //                else if (v > RAW_PRESSURE_FAULT) { _liveChart.SetLaneAlert(laneName, "Pves sensor faulty"); }
-        //                else if (v > RAW_MIN_SMALL && v < P0) { _liveChart.SetLaneAlert(laneName, "Pves not flushed / extension not on holder"); }
-        //                break;
-
-        //            // 1: Pabd or Pirp (pressure)
-        //            case 1:
-        //                if (IsWhitaker(currenttest))
-        //                {
-        //                    if (v < RAW_MIN_20) { _liveChart.SetLaneAlert(laneName, "Pirp sensor not connected"); }
-        //                    else if (v > RAW_PRESSURE_FAULT) { _liveChart.SetLaneAlert(laneName, "Pirp sensor faulty"); }
-        //                    else if (v > RAW_MIN_SMALL && v < P1) { _liveChart.SetLaneAlert(laneName, "Pirp not flushed / extension not on holder"); }
-        //                }
-        //                else
-        //                {
-        //                    if (v < RAW_MIN_20) { _liveChart.SetLaneAlert(laneName, "Pabd sensor not connected"); }
-        //                    else if (v > RAW_PRESSURE_FAULT) { _liveChart.SetLaneAlert(laneName, "Pabd sensor faulty"); }
-        //                    else if (v > RAW_MIN_SMALL && v < P1) { _liveChart.SetLaneAlert(laneName, "Pabd not flushed / extension not on holder"); }
-        //                }
-        //                break;
-
-        //            // 2: Qvol (uroflow)
-        //            case 2:
-        //                if (v < RAW_MIN_25) { _liveChart.SetLaneAlert(laneName, "Connect uroflow sensor cable (or cable broken)"); }
-        //                else if (v >= JF && v < RAW_FAULT_3900) { _liveChart.SetLaneAlert(laneName, "Uroflow jar full—empty jar"); }
-        //                else if (v >= RAW_FAULT_3900) { _liveChart.SetLaneAlert(laneName, "Uroflow sensor faulty"); }
-        //                break;
-
-        //            // 3: Vinf (infusion)
-        //            case 3:
-        //                if (v < RAW_MIN_25) { _liveChart.SetLaneAlert(laneName, "Infusion sensor not connected"); }
-        //                else if (v > 100 && v < ChangeBottle) { _liveChart.SetLaneAlert(laneName, "Change infusion bottle / bottle missing"); }
-        //                else if (v > RAW_FAULT_3900) { _liveChart.SetLaneAlert(laneName, "Infusion sensor faulty / Large NS bottle"); }
-        //                break;
-
-        //            // 4: EMG
-        //            case 4:
-        //                if (v < RAW_MIN_25) { _liveChart.SetLaneAlert(laneName, "EMG not connected"); }
-        //                else if (v > RAW_EMG_FAULT) { _liveChart.SetLaneAlert(laneName, "EMG sensor faulty"); }
-        //                break;
-
-        //            // 5: UPP pulled length (displayed value; still alert on UPP-related lane)
-        //            case 5:
-        //                // Map alert to a visible lane (usually Pura/Pclo area or a generic UPP lane label if you use one)
-        //                string uppLane = !string.IsNullOrEmpty(LaneNameForChannelIndex(6, currenttest)) ? LaneNameForChannelIndex(6, currenttest) : laneName;
-        //                if (v < U1) { _liveChart.SetLaneAlert(uppLane, "UPP module not connected"); }
-        //                else if (v > RAW_FAULT_3900) { _liveChart.SetLaneAlert(uppLane, "UPP module faulty"); }
-        //                else if (v > UH && v < RAW_PRESSURE_FAULT) { _liveChart.SetLaneAlert(uppLane, "UPP ARM pulled fully—reverse it"); }
-        //                break;
-
-        //            // 6: Pura (pressure)
-        //            case 6:
-        //                if (v < RAW_MIN_20) { _liveChart.SetLaneAlert(laneName, "Pura sensor not connected"); }
-        //                else if (v > RAW_PRESSURE_FAULT) { _liveChart.SetLaneAlert(laneName, "Pura sensor faulty"); }
-        //                else if (v > RAW_MIN_SMALL && v < P6) { _liveChart.SetLaneAlert(laneName, "Pura not flushed / extension not on holder"); }
-        //                break;
-        //        }
-        //    }
-        //   //  _haltPlottingDueToAlert = hasAlerts;
-        //}
-        //End Error Code For Pratik Sir comment on 05/12/2025
 
         private bool LaneIsShown(string laneName)
         {
@@ -3323,168 +2607,6 @@ namespace SantronWinApp
         }
 
 
-        //private void BuildScaleMaxOverlays()
-        //{
-        //    if (_liveChart == null) return;
-
-        //    int n = _liveChart.GetChannelCount();
-        //    int i;
-
-        //    // Create/refresh combos for current lanes
-        //    //for (i = 0; i < n; i++)
-        //    //{
-        //    //    string lane = _liveChart.GetChannelNameAt(i);
-        //    //    if (string.IsNullOrEmpty(lane)) continue;
-
-        //    //    ComboBox cb;
-        //    //    if (!_scaleCombos.TryGetValue(lane, out cb))
-        //    //    {
-        //    //        cb = new ComboBox();
-        //    //        cb.Name = "cmbScaleMax_" + lane;
-        //    //        cb.DropDownStyle = ComboBoxStyle.DropDownList;
-        //    //        cb.FlatStyle = FlatStyle.Popup;
-        //    //        cb.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
-        //    //        cb.BackColor = Color.White;
-        //    //        cb.ForeColor = Color.Black;
-        //    //        cb.Tag = lane;
-        //    //        cb.DropDownWidth = MeasureComboDropDownWidth(cb);
-
-        //    //        // Fill options from your PDF map
-        //    //        double[] opts;
-        //    //        if (_scaleOptions.TryGetValue(lane, out opts) && opts != null && opts.Length > 0)
-        //    //        {
-        //    //            string unit = "";
-        //    //            //_unitMap.TryGetValue(lane, out unit);
-        //    //            int k;
-        //    //            for (k = 0; k < opts.Length; k++)
-        //    //            {
-        //    //                string display = (unit == null || unit.Length == 0)
-        //    //                    ? opts[k].ToString()
-        //    //                    : opts[k].ToString();
-        //    //                cb.Items.Add(display);
-        //    //            }
-
-        //    //            double currentMax = _liveChart.GetChannelScaleMaxByName(lane);
-        //    //            int sel = 0; double best = double.MaxValue;
-        //    //            for (k = 0; k < opts.Length; k++)
-        //    //            {
-        //    //                double d = Math.Abs(opts[k] - currentMax);
-        //    //                if (d < best) { best = d; sel = k; }
-        //    //            }
-        //    //            cb.SelectedIndex = sel;
-        //    //        }
-        //    //        else
-        //    //        {
-        //    //            double cur = _liveChart.GetChannelScaleMaxByName(lane);
-        //    //            cb.Items.Add( cur.ToString());
-        //    //            cb.SelectedIndex = 0;
-        //    //        }
-
-        //    //        cb.SelectedIndexChanged += new EventHandler(OnScaleMaxChanged);
-
-        //    //        // add on top of chart
-        //    //        _liveChart.Controls.Add(cb);
-        //    //        cb.BringToFront();
-        //    //        _scaleCombos[lane] = cb;
-        //    //    }
-        //    //}
-
-        //    for (i = 0; i < n; i++)
-        //    {
-        //        string lane = _liveChart.GetChannelNameAt(i);
-        //        if (string.IsNullOrEmpty(lane)) continue;
-
-        //        ComboBox cb;
-
-        //        // --- NEW FIX BELOW ---
-        //        if (_scaleCombos.TryGetValue(lane, out cb))
-        //        {
-        //            // Check if control was destroyed or removed
-        //            if (cb == null || cb.IsDisposed || cb.Parent != _liveChart)
-        //            {
-        //                _scaleCombos.Remove(lane);
-        //                cb = null;
-        //            }
-        //        }
-        //        // --- END FIX ---
-
-        //        if (cb == null)
-        //        {
-        //            cb = new ComboBox();
-        //            cb.Name = "cmbScaleMax_" + lane;
-        //            cb.DropDownStyle = ComboBoxStyle.DropDownList;
-        //            cb.FlatStyle = FlatStyle.Popup;
-        //            cb.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
-        //            cb.BackColor = Color.White;
-        //            cb.ForeColor = Color.Black;
-        //            cb.Tag = lane;
-        //            cb.DropDownWidth = MeasureComboDropDownWidth(cb);
-
-        //            // Fill options
-        //            double[] opts;
-        //            if (_scaleOptions.TryGetValue(lane, out opts) && opts != null && opts.Length > 0)
-        //            {
-        //                string unit = "";
-        //                int k;
-        //                for (k = 0; k < opts.Length; k++)
-        //                {
-        //                    string display = opts[k].ToString();
-        //                    cb.Items.Add(display);
-        //                }
-
-        //                double currentMax = _liveChart.GetChannelScaleMaxByName(lane);
-        //                int sel = 0; double best = double.MaxValue;
-        //                for (k = 0; k < opts.Length; k++)
-        //                {
-        //                    double d = Math.Abs(opts[k] - currentMax);
-        //                    if (d < best) { best = d; sel = k; }
-        //                }
-        //                cb.SelectedIndex = sel;
-        //            }
-        //            else
-        //            {
-        //                double cur = _liveChart.GetChannelScaleMaxByName(lane);
-        //                cb.Items.Add(cur.ToString());
-        //                cb.SelectedIndex = 0;
-        //            }
-
-        //            cb.SelectedIndexChanged += new EventHandler(OnScaleMaxChanged);
-
-        //            _liveChart.Controls.Add(cb);
-        //            cb.BringToFront();
-        //            _scaleCombos[lane] = cb;
-        //        }
-        //    }
-
-
-        //    // Remove combos for lanes that disappeared (e.g., fewer channels test)
-        //    List<string> toRemove = new List<string>();
-        //    foreach (KeyValuePair<string, ComboBox> kv in _scaleCombos)
-        //    {
-        //        bool stillExists = false;
-        //        for (i = 0; i < n; i++)
-        //        {
-        //            string nm = _liveChart.GetChannelNameAt(i);
-        //            if (string.Equals(nm, kv.Key, StringComparison.OrdinalIgnoreCase))
-        //            { stillExists = true; break; }
-        //        }
-        //        if (!stillExists) toRemove.Add(kv.Key);
-        //    }
-        //    for (i = 0; i < toRemove.Count; i++)
-        //    {
-        //        ComboBox gone;
-        //        if (_scaleCombos.TryGetValue(toRemove[i], out gone))
-        //        {
-        //            if (gone.Parent != null) gone.Parent.Controls.Remove(gone);
-        //            gone.Dispose();
-        //            _scaleCombos.Remove(toRemove[i]);
-        //        }
-        //    }
-
-        //    RepositionScaleCombos(); // final place
-        //}
-
-
         private void BuildScaleMaxOverlays()
         {
             if (_liveChart == null) return;
@@ -3696,20 +2818,6 @@ namespace SantronWinApp
             _scaleCombos.Clear();
         }
 
-
-        //private void ClearScaleCombos()
-        //{
-        //    foreach (KeyValuePair<string, ComboBox> kv in _scaleCombos)
-        //    {
-        //        ComboBox cb = kv.Value;
-        //        if (cb != null)
-        //        {
-        //            if (cb.Parent != null) cb.Parent.Controls.Remove(cb);
-        //            cb.Dispose();
-        //        }
-        //    }
-        //    _scaleCombos.Clear();
-        //}
 
         private sealed class ScaleMaxLabelTarget
         {
@@ -3928,20 +3036,7 @@ namespace SantronWinApp
             // End Code For Change First Three ComboBox Value if Change "PVES" Channel ComboBox on 09/10/2025 At 10:54 Night  
         }
 
-        //private void OnRawSampleForZeroing(SampleFrame raw)
-        //{
-        //    if (raw.Values == null) return;
-
-        //    lock (_rawLock)
-        //    {
-        //        var src = raw.Values;
-
-        //        if (_lastRawCounts == null || _lastRawCounts.Length != src.Length)
-        //            _lastRawCounts = new double[src.Length];
-
-        //        Array.Copy(src, _lastRawCounts, src.Length);
-        //    }
-        //}
+       
 
 
         //Current working 28-02-2026
@@ -3968,43 +3063,7 @@ namespace SantronWinApp
             }
         }
 
-        //Bhushan Commint On 06-01-2025
-        //private void AttachOrch()
-        //{
-        //    if (_orch == null) return;
 
-        //    if (!_orchSubscribed)
-        //    {
-        //        _orch.OnDisplayFrame += OnDisplayFrame;
-        //        _orchSubscribed = true;
-        //    }
-
-        //    if (!_daqSubscribed)
-        //    {
-        //        _orch.Daq.OnRawSample += OnRawSampleForZeroing;
-        //        _daqSubscribed = true;
-        //    }
-        //}
-
-        //private void DetachOrch()
-        //{
-        //    if (_orch == null) return;
-
-        //    if (_orchSubscribed)
-        //    {
-        //        _orch.OnDisplayFrame -= OnDisplayFrame;
-        //        _orchSubscribed = false;
-        //    }
-
-        //    if (_daqSubscribed)
-        //    {
-        //        _orch.Daq.OnRawSample -= OnRawSampleForZeroing;
-        //        _daqSubscribed = false;
-        //    }
-        //}
-
-        private TestOrchestrator _attachedOrch = null;
-        private IDaqService _attachedDaq = null;
 
         private void AttachOrch()
         {
@@ -4304,11 +3363,7 @@ namespace SantronWinApp
 
 
 
-        private List<SampleRecord> LoadUtt(
-    string path,
-    out string[] fileLaneNames,
-    out double dt,
-    out List<SantronChart.MultiChannelLiveChart.Marker> markers)
+        private List<SampleRecord> LoadUtt( string path, out string[] fileLaneNames, out double dt, out List<SantronChart.MultiChannelLiveChart.Marker> markers)
         {
             string[] lines = System.IO.File.ReadAllLines(path);
             List<SampleRecord> data = new List<SampleRecord>();
@@ -4496,32 +3551,6 @@ namespace SantronWinApp
             return tests;
         }
 
-        //private bool TryFindLatestUttForPatient(PatientRecord p, string testName, out string uttPath)
-        //{
-        //    uttPath = null;
-        //    try
-        //    {
-        //        string folder = GetPatientTestsFolder(p, testName);
-        //        if (!System.IO.Directory.Exists(folder)) return false;
-
-        //        string[] files = System.IO.Directory.GetFiles(folder, "*.utt");
-        //        if (files == null || files.Length == 0) return false;
-
-        //        // pick newest by write time
-        //        string newest = files[0];
-        //        System.DateTime newestTime = System.IO.File.GetLastWriteTime(newest);
-        //        for (int i = 1; i < files.Length; i++)
-        //        {
-        //            System.DateTime t = System.IO.File.GetLastWriteTime(files[i]);
-        //            if (t > newestTime) { newestTime = t; newest = files[i]; }
-        //        }
-
-        //        uttPath = newest;
-        //        return true;
-        //    }
-        //    catch { return false; }
-        //}
-
 
         private bool TryFindLatestUttForPatient(PatientRecord p, string testName, out string uttPath)
         {
@@ -4580,41 +3609,6 @@ namespace SantronWinApp
             }
         }
 
-
-        //Start this code for live test comment on 03/12/2025
-        //save Test
-        //private void SaveCurrentTestToPatient()
-        //{
-        //    if (_currentPatient == null || string.IsNullOrEmpty(currenttest))
-        //    {
-        //        MessageBox.Show("No patient/test selected. Cannot save under patient.");
-        //        return;
-        //    }
-        //    if (_recorded == null || _recorded.Count == 0)
-        //    {
-        //        MessageBox.Show("Nothing to save.");
-        //        return;
-        //    }
-
-        //    string folder = GetPatientTestsFolder(_currentPatient, currenttest);
-        //    try { System.IO.Directory.CreateDirectory(folder); } catch { }
-
-        //    //string fileName = SanitizeFilePart(currenttest) + "_" + System.DateTime.Now.ToString("yyyyMMdd_HHmm") + ".utt";
-
-        //    // ✅ Updated filename: TestName_MainId_PatientNo_yyyyMMdd_HHmm.utt
-        //    string fileName =
-        //        $"{SanitizeFilePart(currenttest)}_{_currentPatient.Id}_{_currentPatient.PatientNo}_{DateTime.Now:yyyyMMdd_HHmm}.utt";
-
-        //    string fullPath = System.IO.Path.Combine(folder, fileName);
-
-        //    SaveUtt(fullPath);
-        //    MessageBox.Show("Test saved to:\n" + fullPath);
-        //}
-        //End this code for live test comment on 03/12/2025
-
-
-        //Start Code For Live Test Saved and Go to Review Mode Test change on 03/12/2025
-        //this code chnage only Void to string 
 
         //Live Test Saved Code
         private string SaveCurrentTestToPatient()
@@ -4743,10 +3737,7 @@ namespace SantronWinApp
 
         }
 
-        private bool _isDemoMode = false;
 
-        // Add this one line with your other class fields
-        private bool _isLiveTestRunning = false;
 
         private void EnterDemoMode()
         {
@@ -4790,8 +3781,6 @@ namespace SantronWinApp
                 label36.Visible = false;
 
             }
-
-
 
             _liveChart.Clear();
             _liveChart.ScrollToLive();
@@ -4866,27 +3855,6 @@ namespace SantronWinApp
             btnTestStop5.Enabled = false;
             btnTestSave5.Enabled = false;
 
-
-            //Live Test Enabled Save,Pause,Stop buttons
-            //btnTestStart1.Enabled = true;
-            //btnTestPause1.Enabled = true;
-            //btnTestStop1.Enabled = true;
-
-            //btnTestStart2.Enabled = true;
-            //btnTestPause2.Enabled = true;
-            //btnTestStop2.Enabled = true;
-
-            //btnTestStart3.Enabled = true;
-            //btnTestPause3.Enabled = true;
-            //btnTestStop3.Enabled = true;
-
-            //btnTestStart4.Enabled = true;
-            //btnTestPause4.Enabled = true;
-            //btnTestStop4.Enabled = true;
-
-            //btnTestStart5.Enabled = true;
-            //btnTestPause5.Enabled = true;
-            //btnTestStop5.Enabled = true;
         }
 
 
@@ -4923,29 +3891,17 @@ namespace SantronWinApp
 
             //Saved Test Disable Save,Puase,Stop buttons
             btnTestStart1.Enabled = false;
-            //btnTestPause1.Enabled = false;
-            //btnTestStop1.Enabled = false;
 
             btnTestStart2.Enabled = false;
-            //btnTestPause2.Enabled = false;
-            //btnTestStop2.Enabled = false;
 
             btnTestStart3.Enabled = false;
-            //btnTestPause3.Enabled = false;
-            //btnTestStop3.Enabled = false;
 
             btnTestStart4.Enabled = false;
-            //btnTestPause4.Enabled = false;
-            //btnTestStop4.Enabled = false;
 
             btnTestStart5.Enabled = false;
-            //btnTestPause5.Enabled = false;
-            //btnTestStop5.Enabled = false;
 
             _liveChart.EnableHover = true;
         }
-
-        private bool _isUpdateMode = false;
 
         private void LoadUttForPlayback(string path, int v)
         {
@@ -5055,80 +4011,6 @@ namespace SantronWinApp
             }
 
 
-            //int[] map = BuildColumnMap(currentLaneNames, fileLaneNames);
-
-            //int rCount = rows.Count;
-            //int cols = currentLaneNames.Length;
-            //double[,] block = new double[rCount, cols];
-
-            //int r, c;
-            //for (r = 0; r < rCount; r++)
-            //{
-            //    double[] src = rows[r].Values;
-            //    for (c = 0; c < cols; c++)
-            //    {
-            //        int srcIdx = map[c];
-            //        block[r, c] = (srcIdx >= 0 && srcIdx < src.Length) ? src[srcIdx] : 0.0;
-            //    }
-            //}
-
-            //double startT = rows[0].T;
-            //double endT = rows[rCount - 1].T;
-
-            //double span = endT - startT;
-            //if (span < 10.0) span = 10.0;
-
-
-
-            //_liveChart.SetVisibleDuration(_screenMinutes * 60);
-
-
-            //_liveChart.AppendBlock(block, startT, dt);
-
-            //// Disable Live mode
-            //_liveChart.ToggleLive(false);
-
-            //// ⭐ Scroll to LEFT side (start of graph)
-            //_liveChart.ScrollTo(startT);
-
-            //FixScrollWindow(_liveChart, startT, endT);
-
-            //// restore markers
-            //for (int m = 0; m < markers.Count; m++)
-            //{
-            //    var mk = markers[m];
-            //    _liveChart.AddMarker(mk.T, mk.Label, mk.Color, mk.Width, mk.Dash);
-            //}
-
-            //_liveChart.Invalidate();
-
-            //// IMPORTANT:
-            //// Review mode displays lanes using the mapped order (block[r,c] uses map[c]).
-            //// PrintPreview uses _recorded -> so _recorded MUST be built in the SAME lane order as Review.
-            //_recorded.Clear();
-
-            //for (int i = 0; i < rows.Count; i++)
-            //{
-            //    var src = rows[i];
-            //    double[] srcVals = src.Values;
-
-            //    // Build values in CURRENT lane order (same as Review chart)
-            //    double[] vals = new double[cols];
-            //    for (int c2 = 0; c2 < cols; c2++)
-            //    {
-            //        int srcIdx = map[c2];
-            //        vals[c2] = (srcIdx >= 0 && srcVals != null && srcIdx < srcVals.Length)
-            //            ? srcVals[srcIdx]
-            //            : 0.0;
-            //    }
-
-            //    _recorded.Add(new SampleRecord(src.T, vals));
-            //}
-
-            //// In playback/review mode, _recorded is already lane-ordered.
-            //// Avoid any re-mapping in print.
-            //_activeIndices = null;
-
             int[] map = BuildColumnMap(currentLaneNames, fileLaneNames);
 
             int rCount = rows.Count;
@@ -5177,9 +4059,7 @@ namespace SantronWinApp
 
             _liveChart.Invalidate();
 
-            // IMPORTANT:
-            // Review mode displays lanes using the mapped order (block[r,c] uses map[c]).
-            // PrintPreview uses _recorded -> so _recorded MUST be built in the SAME lane order as Review.
+           
             _recorded.Clear();
 
             for (int i = 0; i < rows.Count; i++)
@@ -5256,48 +4136,7 @@ namespace SantronWinApp
             catch { return s; } // tolerate plain text if ever encountered
         }
 
-        //private void OnDisplayFrame(SampleFrame f)
-        //{
-        //    // project: pick just the active columns and order them to match lanes
-        //    var vals = new double[_activeIndices.Length];
-        //    for (int i = 0; i < _activeIndices.Length; i++)
-        //        vals[i] = f.Values[_activeIndices[i]];
-
-        //    if (_warmupCounter < _calibWarmup)
-        //    {
-        //        _warmupCounter++;
-        //        return; // skip plotting/learning
-        //    }
-
-
-
-
-        //    if (_isRecording && !_isPaused)
-        //        _recorded.Add((f.T, (double[])vals.Clone())); // record exactly what's shown
-
-        //    _lastPlotT = f.T;
-
-        //    _liveChart.AppendSample(vals, f.T);
-        //}
-
-
-        //private void ShowMainContent()
-        //{
-        //    if (mainContentPanel == null || rightSidebarPanel == null)
-        //    {
-        //        CreateMainContent();
-        //        CreateRightSidebar();
-        //    }
-        //    else
-        //    {
-        //        mainContentPanel.Visible = true;
-        //        rightSidebarPanel.Visible = true;
-        //    }
-        //}
-
-
-
-
+       
 
         //Start Graph Code
         private string GetScaleAndColorSetupFilePath(string channelZero)
@@ -5497,7 +4336,6 @@ namespace SantronWinApp
         }
 
 
-
         private void ConfigureChartLanes(ScaleAndColorModel record)
         {
             List<MultiChannelLiveChart.Channel> lanes = new List<MultiChannelLiveChart.Channel>();
@@ -5549,7 +4387,6 @@ namespace SantronWinApp
             WireScaleOverlayEvents();
             BuildScaleMaxOverlays();
         }
-
 
 
         private MultiChannelLiveChart.Channel CreateChannel(string name, string colorHex, string scaleText, string unit)
@@ -6141,89 +4978,6 @@ namespace SantronWinApp
         }
 
 
-        //private void CreateRightStopCamera()
-        //{
-        //    rightSidebarPanel = new Panel();
-        //    rightSidebarPanel.Dock = DockStyle.Fill;            // fills its table cell
-        //    rightSidebarPanel.BackColor = Color.FromArgb(248, 249, 250);
-        //    rightSidebarPanel.Padding = new Padding(12);
-        //    //rightSidebarPanel.Padding = new Padding(170, 0, 5, 0);
-
-        //    // ===== Sidebar grid: Preview (auto) + Buttons (auto) + Thumbs (fill) =====
-        //    TableLayoutPanel sidebarGrid = new TableLayoutPanel();
-        //    sidebarGrid.Dock = DockStyle.Fill;
-        //    sidebarGrid.ColumnCount = 1;
-        //    sidebarGrid.RowCount = 3;
-        //    sidebarGrid.BackColor = Color.Transparent;
-        //    sidebarGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        //    sidebarGrid.RowStyles.Add(new RowStyle(SizeType.AutoSize));     // preview host
-        //    sidebarGrid.RowStyles.Add(new RowStyle(SizeType.AutoSize));     // buttons
-        //    sidebarGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));// thumbnails
-
-        //    // ---- Camera preview (keeps ~4:3) ----
-        //    previewHost = new Panel();
-        //    previewHost.Dock = DockStyle.Top;
-        //    previewHost.BackColor = rightSidebarPanel.BackColor; ;
-        //    previewHost.Height = 445; // initial; will be adjusted on resize
-
-        //    cameraPreview = new PictureBox();
-        //    cameraPreview.Dock = DockStyle.Fill;
-        //    cameraPreview.BackColor = rightSidebarPanel.BackColor; ;
-        //    cameraPreview.SizeMode = PictureBoxSizeMode.StretchImage;
-        //    previewHost.Controls.Add(cameraPreview);
-
-        //    // ---- Camera buttons (wrap if narrow) ----
-        //    FlowLayoutPanel buttonRow = new FlowLayoutPanel();
-        //    buttonRow.Dock = DockStyle.Top;
-        //    buttonRow.FlowDirection = FlowDirection.LeftToRight;
-        //    buttonRow.WrapContents = true;
-        //    buttonRow.AutoSize = true;
-        //    buttonRow.Padding = new Padding(0, 2, 0, 0);
-        //    buttonRow.BackColor = Color.Transparent;
-
-        //    captureButton = new Button();
-        //    captureButton.Text = "📸 Capture";
-        //    captureButton.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-        //    captureButton.BackColor = Color.FromArgb(0, 73, 165);
-        //    captureButton.ForeColor = Color.White;
-        //    captureButton.FlatStyle = FlatStyle.Flat;
-        //    captureButton.Width = 413;
-        //    captureButton.Height = 35;
-        //    captureButton.Margin = new Padding(0, 0, 5, 0);
-        //    captureButton.Enabled = false;
-        //    captureButton.FlatAppearance.BorderSize = 0;
-        //    captureButton.Click += new EventHandler(CaptureButton_Click);
-
-
-
-
-        //    buttonRow.Controls.Add(captureButton);
-
-        //    // ---- Thumbnails list (fills remaining space) ----
-        //    capturedImagesPanel = new FlowLayoutPanel();
-        //    capturedImagesPanel.Dock = DockStyle.Fill;
-        //    capturedImagesPanel.AutoScroll = true;
-        //    capturedImagesPanel.WrapContents = true;
-        //    capturedImagesPanel.FlowDirection = FlowDirection.LeftToRight;
-        //    capturedImagesPanel.Padding = new Padding(0, 0, 0, 0);
-        //    capturedImagesPanel.Margin = new Padding(0);
-
-        //    // mount
-        //    sidebarGrid.Controls.Add(previewHost, 0, 0);
-        //    sidebarGrid.Controls.Add(buttonRow, 0, 1);
-        //    sidebarGrid.Controls.Add(capturedImagesPanel, 0, 2);
-        //    rightSidebarPanel.Controls.Add(sidebarGrid);
-
-        //    rightSidebarPanel.Resize += new EventHandler(RightSidebarPanel_Resize);
-        //    capturedImagesPanel.SizeChanged += new EventHandler(CapturedImagesPanel_SizeChanged);
-
-        //    // initial layout pass
-        //    UpdatePreviewSize();
-        //    UpdateThumbSizes();
-        //}
-
-
-
         // ================= IMAGE PREVIEW HELPERS =================
 
         private void ShowImageInCameraPreview(Image image)
@@ -6401,17 +5155,7 @@ namespace SantronWinApp
         }
 
 
-
-        private Dictionary<Image, ImageNoteData> _imageNotesMap =
-      new Dictionary<Image, ImageNoteData>();
-
-        private Image _currentImage = null;
-
-        private TextBox txtRemark;
-        private CheckBox chkImportant;
-
-
-
+        //For Save Images in Live Test
         private void SaveCurrentImageData()
         {
             if (_currentImage == null || txtRemark == null || chkImportant == null)
@@ -6457,17 +5201,6 @@ namespace SantronWinApp
         }
 
         //---
-
-
-
-
-
-
-
-
-
-        private Label _lblInfusion;
-
         private void UpdateInfusionLabel()
         {
             if (_lblInfusion == null) return;
@@ -6657,11 +5390,6 @@ namespace SantronWinApp
 
         //End Graph Code 09/09/2025
 
-
-
-
-
-
         private void ButtonForPatient(object sender, EventArgs e)
         {
             var patientWithTestForm = new PatientWithTestForm();
@@ -6670,22 +5398,6 @@ namespace SantronWinApp
 
 
         //Start Code For Camera
-        private PictureBox cameraPreview;
-        private Button captureButton;
-        private FlowLayoutPanel capturedImagesPanel;
-        private Image dummyImage;
-        private Button toggleCameraButton;
-        private Button brightnessButton;
-        private Button contrastButton;
-        private bool isCameraOn = false;
-
-        private TrackBar brightnessSlider;
-        private Form brightnessForm;
-        private Image originalImage;
-        // private Button _btnMarker;
-        private Label _lblTimer;
-        private Button _btnStart, _btnPause, _btnResume, _btnStop, _btnSave, _btnOpen, _btnMarker;
-
         private void BrightnessButton_Click(object sender, EventArgs e)
         {
             if (cameraPreview.Image == null) return;
@@ -6815,8 +5527,6 @@ namespace SantronWinApp
         }
 
         // Put these fields at class level if you don't already have them:
-
-        private Panel previewHost;
 
         //Camera Screen Design Code
         private void CreateRightSidebar()
@@ -7034,7 +5744,7 @@ namespace SantronWinApp
         }
 
 
-        private List<Image> _capturedImages = new List<Image>();
+       
         //This code Capture image 
         private void CaptureButton_Click(object sender, EventArgs e)
         {
@@ -7095,27 +5805,6 @@ namespace SantronWinApp
 
 
         //Start this code for Save Camere image in test folder 08/12/2025
-        //private void SaveCapturedImages(string testFilePath)
-        //{
-        //    if (_capturedImages.Count == 0)
-        //        return;
-
-        //    string testFolder = Path.GetDirectoryName(testFilePath);
-        //    string imageFolder = Path.Combine(testFolder, "CapturedImages");
-
-        //    if (!Directory.Exists(imageFolder))
-        //        Directory.CreateDirectory(imageFolder);
-
-        //    for (int i = 0; i < _capturedImages.Count; i++)
-        //    {
-        //        string imgPath = Path.Combine(imageFolder, $"Image_{i + 1}.jpg");
-
-        //        _capturedImages[i].Save(imgPath, System.Drawing.Imaging.ImageFormat.Jpeg);
-        //    }
-
-        //    MessageBox.Show($"{_capturedImages.Count} images saved successfully with test.");
-        //}
-
         private void SaveCapturedImages(string testFilePath)
         {
             if (_capturedImages == null || _capturedImages.Count == 0)
@@ -7153,7 +5842,7 @@ namespace SantronWinApp
 
         //End this code for Save Camere image in test folder 08/12/2025
 
-        private string _lastSavedTestFilePath;
+
         private void ClearSavedImagesForCurrentTest()
         {
             try
@@ -7273,32 +5962,7 @@ namespace SantronWinApp
 
         //private object comboDevices;
 
-        //Show ComboBox For Camere 
-        //private void LoadVideoDevices()
-        //{
-        //    try
-        //    {
-        //        comboDevices.Items.Clear();
-
-        //        videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-
-        //        if (videoDevices.Count == 0)
-        //        {
-        //            MessageBox.Show("No video devices found.");
-        //            return;
-        //        }
-
-        //        foreach (FilterInfo device in videoDevices)
-        //            comboDevices.Items.Add(device.Name);
-
-        //        comboDevices.SelectedIndex = 0;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Error loading devices: " + ex.Message);
-        //    }
-        //}
-
+        //Show ComboBox For Camere
         private void LoadVideoDevices()
         {
             videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
@@ -7354,76 +6018,7 @@ namespace SantronWinApp
         }
 
 
-        //private void StartCamera()
-        //{
-        //    try
-        //    {
-        //        if (videoSource != null && videoSource.IsRunning)
-        //            return;
-
-        //        int index = comboDevices.SelectedIndex;
-        //        if (index < 0)
-        //        {
-        //            MessageBox.Show("Please select a device.");
-        //            return;
-        //        }
-
-        //        var selectedDevice = videoDevices[index];
-
-        //        if (!selectedDevice.Name.Contains("Live Streaming Video Device"))
-        //        {
-        //            ShowCameraMessage("Device is not connected");
-        //            return;
-        //        }
-
-
-        //        videoSource = new VideoCaptureDevice(selectedDevice.MonikerString);
-
-        //        var modes1080p = videoSource.VideoCapabilities
-        //            .Where(v => v.FrameSize.Width == 1920 && v.FrameSize.Height == 1080)
-        //            .ToList();
-
-        //        if (modes1080p.Count > 0)
-        //        {
-        //            var bestMode = modes1080p
-        //                .OrderByDescending(v => v.AverageFrameRate)
-        //                .First();
-
-        //            videoSource.VideoResolution = bestMode;
-        //        }
-        //        else
-        //        {
-        //            var fallback = videoSource.VideoCapabilities
-        //                .OrderByDescending(v => v.FrameSize.Width * v.FrameSize.Height)
-        //                .FirstOrDefault();
-
-        //            if (fallback != null)
-        //                videoSource.VideoResolution = fallback;
-        //            else
-        //            {
-        //                MessageBox.Show("No supported video format found.");
-        //                return;
-        //            }
-        //        }
-
-        //        videoSource.NewFrame += (s, args) =>
-        //        {
-        //            Bitmap frame = (Bitmap)args.Frame.Clone();
-        //            cameraPreview.Invoke(new Action(() =>
-        //            {
-        //                cameraPreview.Image?.Dispose();
-        //                cameraPreview.Image = frame;
-        //            }));
-        //        };
-
-        //        videoSource.Start();
-        //        captureButton.Enabled = true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Error starting capture: " + ex.Message);
-        //    }
-        //}
+        
         //Start This code for Block System Camera and show massage "Device is not Connected"
         private string GetPatientFilePath(string videoDevice)
         {
@@ -7437,28 +6032,6 @@ namespace SantronWinApp
 
             return Path.Combine(folder, videoDevice + ".dat");
         }
-
-        //private string LoadCameraMonikerFromFile()
-        //{
-        //    try
-        //    {
-        //        string filePath = GetPatientFilePath("SelectedDevice");
-
-        //        if (!File.Exists(filePath))
-        //            return null;
-
-        //        string moniker = File.ReadAllText(filePath)?.Trim();
-
-        //        if (string.IsNullOrEmpty(moniker))
-        //            return null;
-
-        //        return moniker;
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-        //}
 
         private string LoadCameraMonikerFromFile()
         {
@@ -7485,6 +6058,9 @@ namespace SantronWinApp
             }
         }
         //Start this code for Get Use "VideoDevice Form Data" show change on 08/12/2025
+
+        //Show System Camera with Connect Device
+        // This Code For Connect Other Laptop and show Screen in Camera Screen add on 13/11/2025
         private void StartCamera()
         {
             try
@@ -7634,104 +6210,7 @@ namespace SantronWinApp
             }
         }
 
-        //Show System Camera with Connect Device
-        // This Code For Connect Other Laptop and show Screen in Camera Screen add on 13/11/2025
-        //private void StartCamera()
-        //{
-        //    try
-        //    {
-        //        if (videoSource != null && videoSource.IsRunning)
-        //            return;
-
-        //        int index = comboDevices.SelectedIndex;
-        //        if (index < 0)
-        //        {
-        //            MessageBox.Show("Please select a device.");
-        //            return;
-        //        }
-
-        //        var selectedDevice = videoDevices[index];
-        //        videoSource = new VideoCaptureDevice(selectedDevice.MonikerString);
-
-        //        var modes1080p = videoSource.VideoCapabilities
-        //            .Where(v => v.FrameSize.Width == 1920 && v.FrameSize.Height == 1080)
-        //            .ToList();
-
-        //        if (modes1080p.Count > 0)
-        //        {
-        //            var bestMode = modes1080p
-        //                .OrderByDescending(v => v.AverageFrameRate)
-        //                .First();
-
-        //            videoSource.VideoResolution = bestMode;
-        //        }
-        //        else
-        //        {
-        //            var fallback = videoSource.VideoCapabilities
-        //                .OrderByDescending(v => v.FrameSize.Width * v.FrameSize.Height)
-        //                .FirstOrDefault();
-
-        //            if (fallback != null)
-        //                videoSource.VideoResolution = fallback;
-        //            else
-        //                MessageBox.Show("No supported video format found.");
-        //        }
-
-        //        videoSource.NewFrame += (s, args) =>
-        //        {
-        //            Bitmap frame = (Bitmap)args.Frame.Clone();
-        //            cameraPreview.Invoke(new Action(() =>
-        //            {
-        //                cameraPreview.Image?.Dispose();
-        //                cameraPreview.Image = frame;
-        //            }));
-        //        };
-
-        //        videoSource.Start();
-
-        //        captureButton.Enabled = true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Error starting capture: " + ex.Message);
-        //    }
-        //}
-
-
-        //Start This Code For Open Laptop means Current System Camera commit on 13/11/2025
-        //private void StartCamera()
-        //{
-        //    if (!isCameraOn)
-        //    {
-
-        //        try
-        //        {
-        //            videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-        //            if (videoDevices.Count > 0)
-        //            {
-        //                videoSource = new VideoCaptureDevice(videoDevices[0].MonikerString);
-        //                videoSource.NewFrame += (s, args) =>
-        //                {
-        //                    Bitmap frame = (Bitmap)args.Frame.Clone();
-        //                    cameraPreview.Invoke(new Action(() =>
-        //                    {
-        //                        cameraPreview.Image?.Dispose();
-        //                        cameraPreview.Image = frame;
-        //                    }));
-        //                };
-        //                videoSource.Start();
-        //                isCameraOn = true;
-        //                captureButton.Enabled = true;
-        //            }
-        //            else
-        //            {
-        //                MessageBox.Show("No camera detected.");
-        //            }
-        //        }
-        //        catch { }
-        //    }
-        //}
-
+        
         private void StopCamera()
         {
             try
@@ -7895,18 +6374,6 @@ namespace SantronWinApp
             overlayPanel.BringToFront();
         }
 
-
-        //private string GetDoctorsFolder()
-        //{
-        //    string exeFolder = Application.StartupPath;
-        //    string folder = Path.Combine(exeFolder, "Saved Data", "DoctorsData");
-
-        //    if (!Directory.Exists(folder))
-        //        Directory.CreateDirectory(folder);
-
-        //    return folder;
-        //}
-
         private List<string> GetAllDoctorNames()
         {
             // string folderPath = GetDoctorsFolder();
@@ -7936,236 +6403,6 @@ namespace SantronWinApp
             return doctorNames;
         }
 
-        //Not Delete this method again Use may be
-        //Start This Code For Show PatientList In Home Screen (Reference :- CreateMainContentForPatient Method Call this method line No. 3643)  commint on 07/11/2025
-        private void CreatePatientRightSidebar()
-        {
-            // === Right sidebar host ===
-            rightSidebarPanelForPatient = new Panel
-            {
-                Width = 380,                                 // fixed rail width; can be made dynamic below
-                Dock = DockStyle.Right,
-                BackColor = Color.FromArgb(248, 249, 250),
-                Padding = new Padding(5)
-            };
-
-            // Optional: collapse the sidebar on very small widths
-            this.Resize -= MainForm_Resize_ForPatientSidebar; // avoid multi-subscribe on rebuilds
-            this.Resize += MainForm_Resize_ForPatientSidebar;
-
-            var grid = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 4
-            };
-            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // search
-            grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // doctor
-            grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // label
-            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // scroll area
-
-            // === Add New Patient button (docked bottom so it sticks there even while scrolling) ===
-            //var addPatientBtn = new Button
-            //{
-            //    Text = "+ Add New Patient",
-            //    Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-            //    BackColor = Color.FromArgb(0, 73, 165),
-            //    ForeColor = Color.White,
-            //    FlatStyle = FlatStyle.Flat,
-            //    Height = 35,
-            //    Dock = DockStyle.Top,
-            //    Cursor = Cursors.Hand,
-            //    //Padding = new Padding(10, 7, 10, 7),
-            //    Margin = new Padding(0, 0, 0, 7)
-            //};
-            //addPatientBtn.FlatAppearance.BorderSize = 0;
-
-            //addPatientBtn.Click += (_, __) =>
-            //{
-            //    var patientForm = new Patient_Information();
-            //    ScreenDimOverlay.ShowDialogWithDim(patientForm, alpha: 150);
-            //};
-
-            // === Search box with button ===
-            var searchContainer = new Panel
-            {
-                Height = 33,
-                Dock = DockStyle.Top,
-                BackColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle,
-                Padding = new Padding(10, 7, 10, 7),
-                Margin = new Padding(0, 0, 0, 7)
-            };
-
-            var searchBox = new TextBox
-            {
-                BorderStyle = BorderStyle.None,
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10F),
-                ForeColor = Color.Gray,
-                Text = "Search here",
-                BackColor = Color.White
-            };
-
-            //var searchButton = new Button
-            //{
-            //    Text = "🔍",
-            //    Font = new Font("Segoe UI", 11F, FontStyle.Regular),
-            //    Dock = DockStyle.Right,
-            //    Width = 35,
-            //    FlatStyle = FlatStyle.Flat,
-            //    BackColor = Color.FromArgb(0, 73, 165),
-            //    ForeColor = Color.White,
-            //    Cursor = Cursors.Hand,
-            //    TabStop = false
-            //};
-            //searchButton.FlatAppearance.BorderSize = 0;
-
-            // placeholder behavior
-            searchBox.GotFocus += (_, __) =>
-            {
-                if (searchBox.Text == "Search here")
-                {
-                    searchBox.Text = "";
-                    searchBox.ForeColor = Color.Black;
-                }
-            };
-            searchBox.LostFocus += (_, __) =>
-            {
-                if (string.IsNullOrWhiteSpace(searchBox.Text))
-                {
-                    searchBox.Text = "Search here";
-                    searchBox.ForeColor = Color.Gray;
-                }
-            };
-
-            searchContainer.Controls.Add(searchBox);
-            //searchContainer.Controls.Add(searchButton);
-
-            // === Doctor filter ===
-            var drNameCombo = new ComboBox
-            {
-                Dock = DockStyle.Top,
-                Height = 35,
-                Font = new Font("Segoe UI", 10F),
-                BackColor = Color.White,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Margin = new Padding(0, 0, 0, 10)
-            };
-
-            drNameCombo.Items.Clear();
-            drNameCombo.Items.Add("All Doctors");
-            var doctors = GetAllDoctorNames();
-            if (doctors != null && doctors.Count > 0)
-            {
-                foreach (var name in doctors
-                         .Select(n => n?.Trim())
-                         .Where(n => !string.IsNullOrEmpty(n))
-                         .Distinct(StringComparer.OrdinalIgnoreCase)
-                         .OrderBy(n => n))
-                {
-                    drNameCombo.Items.Add(name);
-                }
-            }
-            else
-            {
-                drNameCombo.Items.Add("No Doctors Found");
-            }
-            drNameCombo.SelectedIndex = 0;
-
-            // === Label ===
-            var appointmentsLabel = new Label
-            {
-                Text = "Today's Appointments",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(33, 37, 41),
-                AutoSize = true,
-                Dock = DockStyle.Top,
-                Margin = new Padding(0, 0, 0, 6),
-                Visible = false
-            };
-
-            // === Scroll area (fills) ===
-            var scrollHost = new Panel
-            {
-                Dock = DockStyle.Fill,
-                AutoScroll = true,
-                BackColor = Color.Transparent,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                Padding = new Padding(2, 0, 2, 0)
-            };
-
-
-
-            // inner container so the bottom button can be docked within scroll host
-            var listAndButtonStack = new Panel
-            {
-                Dock = DockStyle.Fill
-            };
-
-            // the actual list container
-            var patientCardsHost = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                AutoScroll = true,
-                Padding = new Padding(0, 0, 0, 8), // gutters look nicer
-                Margin = new Padding(0),
-                AutoSize = false
-
-            };
-
-            patientCardsHost.SizeChanged += (_, __) => ResizeCardsToHost(patientCardsHost);
-            patientCardsHost.ControlAdded += (_, __) => BeginInvoke(new Action(() => ResizeCardsToHost(patientCardsHost)));
-
-
-            // wire filters
-            void TriggerFilter()
-            {
-                string doctor = drNameCombo.SelectedItem?.ToString() ?? "All Doctors";
-                string text = (searchBox.Text == "Search here") ? "" : searchBox.Text.Trim();
-                LoadPatients(patientCardsHost, doctor, text);
-                int filteredpatientcount = LoadPatients(patientCardsHost, doctor, text);
-                appointmentsLabel.Text = $"Today's Appointments ({filteredpatientcount})";
-
-            }
-
-            drNameCombo.SelectedIndexChanged += (_, __) => TriggerFilter();
-            //searchButton.Click += (_, __) => TriggerFilter();
-            searchBox.TextChanged += (_, __) =>
-            {
-                if (searchBox.Focused) TriggerFilter();
-            };
-
-            // initial load
-            int patientcount = LoadPatients(patientCardsHost, "All Doctors", "");
-            appointmentsLabel.Text = $"Today's Appointments ({patientcount})";
-            LoadPatients(patientCardsHost, "All Doctors", "");
-
-            // compose hierarchy
-            listAndButtonStack.Controls.Add(patientCardsHost);
-            //listAndButtonStack.Controls.Add(addPatientBtn);
-            scrollHost.Controls.Add(listAndButtonStack);
-
-            //grid.Controls.Add(addPatientBtn, 0, 0);
-            grid.Controls.Add(searchContainer, 0, 1);
-            grid.Controls.Add(drNameCombo, 0, 2);
-            //grid.Controls.Add(appointmentsLabel, 0, 3);
-            grid.Controls.Add(scrollHost, 0, 3);
-
-
-            //grid.Controls.Add(searchContainer, 0, 0);
-            //grid.Controls.Add(drNameCombo, 0, 1);
-            //grid.Controls.Add(appointmentsLabel, 0, 2);
-            //grid.Controls.Add(scrollHost, 0, 3);
-
-            rightSidebarPanelForPatient.Controls.Add(grid);
-            this.Controls.Add(rightSidebarPanelForPatient);
-            rightSidebarPanelForPatient.BringToFront(); // ensure it sits above central content
-        }
-
         // Optional: collapse/expand sidebar on very narrow widths
         private void MainForm_Resize_ForPatientSidebar(object sender, EventArgs e)
         {
@@ -8184,55 +6421,6 @@ namespace SantronWinApp
             }
         }
 
-
-
-        private List<MultiChannelLiveChart.Channel> GetTestChannels(string test, ScaleAndColorModel record)
-        {
-
-            var testChannelMap = new Dictionary<string, string[]>
-            {
-                ["Uroflowmetry"] = new[] { "Qvol", "Qrate" },
-                ["Uroflowmetry + EMG"] = new[] { "Qvol", "Qrate" },
-                ["Cystometry"] = new[] { "Pves", "Pabd", "Pdet", "Vinf" },
-                ["Pressure Flow"] = new[] { "Pves", "Pabd", "Pdet", "Vinf", "Qvol", "Qrate" },
-                ["Pressure Flow + EMG"] = new[] { "Pves", "Pabd", "Pdet", "Vinf", "Qvol", "Qrate", "EMG" },
-                ["UPP"] = new[] { "Pves", "Pura", "Pclo" },
-                ["Whitaker Test"] = new[] { "Pves", "Pirp", "Prpg" },
-                ["Pressure Flow + Video"] = new[] { "Pves", "Pabd", "Pdet", "Vinf", "Qvol", "Qrate" },
-                ["Pressure Flow + EMG + Video"] = new[] { "Pves", "Pabd", "Pdet", "Vinf", "Qvol", "Qrate", "EMG" },
-                ["Biofeedback"] = new[] { "EMG" },
-                ["Anal Manometry"] = new[] { "Pa1", "Pa2", "Pa3" }
-            };
-
-            if (!testChannelMap.ContainsKey(test)) return new List<MultiChannelLiveChart.Channel>();
-
-            var requiredChannels = testChannelMap[test];
-
-
-            List<MultiChannelLiveChart.Channel> lanes = new List<MultiChannelLiveChart.Channel>();
-
-            lanes.Add(CreateChannel(record.ChannelZero, record.ColorZero, record.PlotScaleZero, "cmH2O"));
-            lanes.Add(CreateChannel(record.ChannelOne, record.ColorOne, record.PlotScaleOne, "cmH2O"));
-            lanes.Add(CreateChannel(record.ChannelTwo, record.ColorTwo, record.PlotScaleTwo, "cmH2O"));
-            lanes.Add(CreateChannel(record.ChannelThree, record.ColorThree, record.PlotScaleThree, "ml"));
-            lanes.Add(CreateChannel(record.ChannelFour, record.ColorFour, record.PlotScaleFour, "ml"));
-            lanes.Add(CreateChannel(record.ChannelFive, record.ColorFive, record.PlotScaleFive, "ml/s"));
-            lanes.Add(CreateChannel(record.ChannelSix, record.ColorSix, record.PlotScaleSix, "uV"));
-            //lanes.Add(CreateChannel(record.ChannelSeven, record.ColorSeven, record.PlotScaleSeven, "cmH2O"));
-            //lanes.Add(CreateChannel(record.ChannelEight, record.ColorEight, record.PlotScaleEight, "cmH2O"));
-
-            // Remove nulls (if channel name is empty)
-            lanes = lanes.Where(c => c != null && requiredChannels.Contains(c.Name, StringComparer.OrdinalIgnoreCase)).ToList();
-
-            _liveChart.SetChannels(lanes);
-            _liveChart.ScrollToLive();
-            _activeIndices = Enumerable.Range(0, lanes.Count).ToArray();
-
-
-            return lanes
-            .Where(c => c != null && requiredChannels.Contains(c.Name, StringComparer.OrdinalIgnoreCase))
-            .ToList();
-        }
 
 
         private int LoadPatients(FlowLayoutPanel flp, string doctorFilter = "", string searchText = "")
@@ -8637,11 +6825,6 @@ namespace SantronWinApp
             foreach (Control c in root.Controls) WireHoverRecursive(c, enter, leave);
         }
 
-
-
-
-
-
         private void CreateMenuStrip()
         {
             menuStrip1 = new MenuStrip();
@@ -8844,10 +7027,6 @@ namespace SantronWinApp
             if (panel8.Visible)
                 panel8.BringToFront();
         }
-
-
-        private bool _isDeviceConnected = false;
-
 
         private Bitmap CreateBullet(Color color)
         {
@@ -9406,13 +7585,6 @@ namespace SantronWinApp
         {
 
         }
-
-        //private void btnCMP2_Click(object sender, EventArgs e)
-        //{
-        //    var reportForm = new ReportComments();
-        //    ScreenDimOverlay.ShowDialogWithDim(reportForm, alpha: 150);
-        //}
-
         private void btnCMP2_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(_currentMainId) ||
@@ -9497,8 +7669,7 @@ namespace SantronWinApp
 
         //=============== EMG CODE START==============
 
-        private ToolStripStatusLabel _batteryStatusLabel;
-        private Timer _batteryCheckTimer;
+
         // In your constructor or initialization method, add:
         private void SetupBatteryIndication()
         {
@@ -9866,35 +8037,12 @@ namespace SantronWinApp
         }
         //=============== EMG CODE END==============
 
-
-
-
-
         //--------------- New Graph -------------//
 
         private void button2_Click(object sender, EventArgs e)
         {
             _liveChart.AddMarker(_lastPlotT, "FS", Color.Green);
         }
-
-
-
-
-
-        //Start Test Button Marun Color
-        //private void btnTestStart1_Click(object sender, EventArgs e)
-        //{
-        //    _recorded.Clear();
-        //    _isRecording = true;
-        //    _isPaused = false;
-        //    _pauseStartedAt = null;
-        //    _pausedTime = TimeSpan.Zero;
-        //    _testStartTime = DateTime.Now;
-
-        //    _testTimer.Start();
-        //    UpdateTimerLabel();
-        //    UpdateButtons(recording: true, paused: false, canSave: false);
-        //}
 
         private bool ShouldShowConfirmMessage(string testName)
         {
@@ -10061,7 +8209,7 @@ namespace SantronWinApp
 
 
         }
-        private TestOrchestrator _testOrchestrator;
+       
 
         //Start code for AUTO-STOP Measn Auto Savedtest only for UROFLOW tests 12/12/2025
         private void NoFlowTimer_Tick(object sender, EventArgs e)
@@ -10089,35 +8237,6 @@ namespace SantronWinApp
             }
         }
         //End code for AUTO-STOP Measn Auto Savedtest only for UROFLOW tests 12/12/2025
-
-
-        //Bhushan comment on 13-01-2026
-        //private void ForceFreshStartForLiveGraph()
-        //{
-        //    bool oldAccept = _acceptLiveFrames;
-        //    _acceptLiveFrames = false;
-
-        //    try
-        //    {
-        //        _liveChart.Stop();
-        //        _liveChart.Clear();
-        //        _liveChart.ClearMarkers();
-
-        //        // 🔥 THIS IS THE MISSING LINE
-        //        //_orch.Proc.ResetAllChannels();
-        //        _orch.Proc.ZeroNonPressureChannels(_lastRawCounts, 0, 1);
-
-
-        //        _liveChart.Start();
-        //        _liveChart.ToggleLive(true);
-        //        _liveChart.ScrollToLive();
-        //        _liveChart.Invalidate();
-        //    }
-        //    finally
-        //    {
-        //        _acceptLiveFrames = oldAccept;
-        //    }
-        //}
 
         private void ForceFreshStartForLiveGraph()
         {
@@ -10271,8 +8390,6 @@ namespace SantronWinApp
 
         }
 
-
-
         private void btnTestStart3_Click(object sender, EventArgs e)
         {
             // If already recording and NOT paused -> do nothing
@@ -10353,6 +8470,7 @@ namespace SantronWinApp
 
             StartLiveTest();
         }
+        
         private void btnTestStart4_Click(object sender, EventArgs e)
         {
 
@@ -10430,10 +8548,6 @@ namespace SantronWinApp
                 UpdateButtons(recording: true, paused: false, canSave: false);
                 return;
             }
-
-
-
-
             StartLiveTest();
         }
 
@@ -10515,17 +8629,11 @@ namespace SantronWinApp
                 UpdateButtons(recording: true, paused: false, canSave: false);
                 return;
             }
-
-
-
-
             StartLiveTest();
         }
 
         //Time Code
 
-        private const int MAX_TEST_DURATION_MINUTES = 90;
-        private const int MAX_TEST_DURATION_MINUTES_UROFLOWMETRY = 10;
         private void UpdateTimerLabel()
         {
             if (!_isRecording)
@@ -10570,26 +8678,6 @@ namespace SantronWinApp
             //_lblTimer.Text = $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
         }
 
-        //private void UpdateTimerLabel()
-        //{
-        //    if (!_isRecording)
-        //    {
-        //        _lblTimer.Text = "00:00";
-        //        return;
-        //    }
-
-        //    var pauseSoFar = (_isPaused && _pauseStartedAt.HasValue)
-        //        ? (DateTime.Now - _pauseStartedAt.Value)
-        //        : TimeSpan.Zero;
-
-        //    var elapsed = (DateTime.Now - _testStartTime) - (_pausedTime + pauseSoFar);
-        //    if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
-
-        //    // Show HH:mm (minutes are lowercase mm)
-        //    _lblTimer.Text = $"{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-        //    //_lblTimer.Text = $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}";
-        //}
-
         private void UpdateButtons(bool recording, bool paused, bool canSave)
         {
             _btnStart.Enabled = !recording;
@@ -10599,31 +8687,7 @@ namespace SantronWinApp
             _btnSave.Enabled = canSave;
         }
 
-
-
-
-        //Pause Test Button Marun Color
-        //private void btnTestPause1_Click(object sender, EventArgs e)
-        //{
-        //    DialogResult result = MessageBox.Show(
-        //        "Are you sure you want to Pause the test?",
-        //        "Confirm Pause",
-        //        MessageBoxButtons.YesNo,
-        //        MessageBoxIcon.Question
-        //    );
-
-        //    if (result != DialogResult.Yes)
-        //    {
-        //        return;
-        //    }
-
-        //    if (!_isRecording || _isPaused) return;
-        //    _isPaused = true;
-        //    _pauseStartedAt = DateTime.Now;
-        //    UpdateTimerLabel();
-        //    UpdateButtons(recording: true, paused: true, canSave: _recorded.Count > 0);
-        //}
-
+        //Pause Test Button Marun Color 
         private async void btnTestPause1_Click(object sender, EventArgs e)
         {
             // If already paused, don't do anything
@@ -10656,166 +8720,6 @@ namespace SantronWinApp
                 await ResumeAfterPause();
             }
         }
-
-        //private void btnTestPause1_Click(object sender, EventArgs e)
-        //{
-
-        //    // If already paused, don't do anything
-        //    if (_isPaused) return;
-
-        //    _isPaused = true;
-        //    _pauseStartedAt = DateTime.Now;
-
-        //    // Stop timer and processing
-        //    _testTimer.Stop();
-
-        //    if (_orch != null)
-        //        _orch.StopProcessing();
-
-        //    _arm?.StopArm();
-
-        //    UpdateTimerLabel();
-
-        //    // Store pump state before stopping
-        //    _pumpWasRunningBeforePause = _orch?.Pump?.IsRunning ?? false;
-
-        //    // Change timer color to indicate pause
-        //    if (_lblTimer != null)
-        //        _lblTimer.ForeColor = Color.Red;
-
-        //    // Show popup
-        //    DialogResult result = MessageBox.Show(
-        //        "Recording Paused. Click OK to resume.",
-        //        "Recording Paused",
-        //        MessageBoxButtons.OK,
-        //        MessageBoxIcon.Information
-        //    );
-
-        //    // Resume when user clicks OK
-        //    if (result == DialogResult.OK)
-        //    {
-        //        // Calculate pause duration
-        //        if (_pauseStartedAt.HasValue)
-        //        {
-        //            var pausedDuration = (DateTime.Now - _pauseStartedAt.Value);
-
-        //            // Add to total paused time
-        //            _pausedTime += pausedDuration;
-
-        //            // IMPORTANT: Store the offset but DON'T add it to _timeOffsetAfterPause
-        //            // Instead, we'll use this to adjust future samples
-        //            _pauseStartedAt = null;
-        //        }
-
-        //        _isPaused = false;
-
-        //        // Restore color and resume timer
-        //        if (_lblTimer != null)
-        //            _lblTimer.ForeColor = Color.Black;
-
-        //        _testTimer.Start();
-        //        UpdateTimerLabel();
-
-        //        // Resume processing
-        //        if (_orch != null)
-        //            _orch.StartProcessing();
-        //    }
-
-        //    UpdateButtons(recording: true, paused: _isPaused, canSave: _recorded.Count > 0);
-        //}
-
-        private bool _isPumpRunning = false;
-        private bool _pumpWasRunningBeforePause = false;
-
-
-
-        //private void btnTestPause2_Click(object sender, EventArgs e)
-        //{
-        //    // If already paused, don't do anything
-        //    if (_isPaused) return;
-
-        //    _isPaused = true;
-        //    _pauseStartedAt = DateTime.Now;
-
-        //    // ✅ Store TRUE actual state
-        //    _pumpWasRunningBeforePause = _isPumpRunning;
-
-        //    // Stop timer and processing
-        //    _testTimer.Stop();
-
-        //    if (_orch != null)
-        //        _orch.StopProcessing();
-
-        //    _arm?.StopArm();
-
-        //    UpdateTimerLabel();
-
-        //    // Stop pump ONLY if it is running
-        //    if (_isPumpRunning)
-        //    {
-        //        PumpStop();
-        //    }
-
-        //    // Change timer color to indicate pause
-        //    if (_lblTimer != null)
-        //        _lblTimer.ForeColor = Color.Red;
-
-
-
-        //    // Show popup
-        //    DialogResult result = MessageBox.Show(
-        //        "Recording Paused. Click OK to resume.",
-        //        "Recording Paused",
-        //        MessageBoxButtons.OK,
-        //        MessageBoxIcon.Information
-        //    );
-
-        //    // Resume when user clicks OK
-        //    if (result == DialogResult.OK)
-        //    {
-        //        // Calculate pause duration
-        //        if (_pauseStartedAt.HasValue)
-        //        {
-        //            var pausedDuration = (DateTime.Now - _pauseStartedAt.Value );
-
-        //            // Add to total paused time
-        //            _pausedTime += pausedDuration; 
-
-        //            // IMPORTANT: Store the offset but DON'T add it to _timeOffsetAfterPause
-        //            // Instead, we'll use this to adjust future samples
-        //            _pauseStartedAt = null;
-        //        }
-
-        //        _isPaused = false;
-
-        //        // ✅ Start pump ONLY if it was running before pause
-        //        if (_pumpWasRunningBeforePause)
-        //        {
-        //            PumpStart();
-        //        }
-
-        //        // Restore color and resume timer
-        //        if (_lblTimer != null)
-        //            _lblTimer.ForeColor = Color.Black;
-
-        //        _testTimer.Start();
-        //        UpdateTimerLabel();
-
-        //        // Resume processing
-        //        if (_orch != null)
-        //            _orch.StartProcessing();
-        //    }
-
-        //    UpdateButtons(recording: true, paused: _isPaused, canSave: _recorded.Count > 0);
-        //}
-
-
-
-
-
-
-
-
 
         //----------------------------------------------------------------27/02/2026--------------
 
@@ -11023,8 +8927,6 @@ namespace SantronWinApp
             _liveChart.ChartClicked -= LiveChart_ChartClicked;
             _liveChart.ChartClicked -= FS_ChartClicked;
         }
-
-
 
         private async void btnFS_Click(object sender, EventArgs e)
         {
@@ -11306,8 +9208,6 @@ namespace SantronWinApp
             }
         }
 
-        private int _markerCounter = 0;
-
         public async void MultiClick(object sender)
         {
             if (sender is Control ctrl)
@@ -11354,7 +9254,6 @@ namespace SantronWinApp
 
             return nextNumber;
         }
-
 
         private void btnGP_Click(object sender, EventArgs e)
         {
@@ -11486,10 +9385,6 @@ namespace SantronWinApp
                 MultiClick(sender);
             }
         }
-
-
-        private double? _r1 = null;
-        private double? _r2 = null;
 
         private void btnR1_Click(object sender, EventArgs e)
         {
@@ -11745,13 +9640,6 @@ namespace SantronWinApp
             }
         }
 
-        private bool _isMarkerRemoveMode;
-        private bool _removeFsOnNextClick = false;
-        private bool _blockFsPlacement;
-        private bool _removeGpOnNextClick = false;
-        private bool _blockGpPlacement = false;
-
-
         private void btnM_Click(object sender, EventArgs e)
         {
 
@@ -11806,70 +9694,6 @@ namespace SantronWinApp
                 Cursor = Cursors.Default;
             }
         }
-
-        //Code for If Click on M button so Remove the first added marker this Marker Line not remove the  clicked marker line chnage on 14-02-2026
-
-        //private void Chart_RemoveMarkerOnClick(double clickedX)
-        //{
-        //    if (!_isMarkerRemoveMode)
-        //        return;
-
-        //    // find marker with T closest to clicked X
-        //    var marker = _liveChart.Markers
-        //        .OrderBy(m => Math.Abs(m.T - clickedX))
-        //        .FirstOrDefault();
-
-        //    // Threshold depends on sampling, 0.2 sec works best
-        //    if (marker != null && Math.Abs(marker.T - clickedX) < 0.2)
-        //    {
-        //        _liveChart.RemoveMarker(marker.Label);
-
-        //        //Code For "M" button click Only one Mark line remove 
-        //        _isMarkerRemoveMode = false;
-        //        _liveChart.ChartClicked -= Chart_RemoveMarkerOnClick;
-
-        //        Cursor = Cursors.Default;
-        //    }
-        //}
-
-
-        //End Code Remove Already Added Marked Click on "M" button and click Mark Lines so Remove the Lines add on 19/11/2025
-
-        //private void btnArtifactM_Click(object sender, EventArgs e)
-        //{
-        //    //_liveChart.ClearMarkers();
-
-        //    if (_r1.HasValue && _r2.HasValue)
-        //    {
-        //        double min = Math.Min(_r1.Value, _r2.Value);
-        //        double max = Math.Max(_r1.Value, _r2.Value);
-
-        //        //_liveChart.ClearMarkers();
-
-        //        //_liveChart.RemoveMarker("R1");
-        //        //_liveChart.RemoveMarker("R2");
-
-        //        //_liveChart.RemoveSamplesBetween(min, max);
-
-        //        _r1 = _r2 = null;
-        //    }
-
-        //    // Enable remove mode
-        //    _isMarkerRemoveMode = true;
-
-        //    //This code For Remove Mark Line Click Line Button and remove 
-        //    //_removeFsOnNextClick = true;
-        //    //_blockFsPlacement = true;
-        //    //_removeGpOnNextClick = true;
-        //    //_blockGpPlacement = true;
-
-
-        //    // subscribe Action<double>
-        //    _liveChart.ChartClicked -= Chart_RemoveMarkerOnClick;
-        //    _liveChart.ChartClicked += Chart_RemoveMarkerOnClick;
-
-        //    Cursor = Cursors.Hand;
-        //}
 
         private void btnArtifactM_Click(object sender, EventArgs e)
         {
@@ -11940,18 +9764,6 @@ namespace SantronWinApp
             //ExitMarkerRemoveMode();
             //End this code For Delete the plotting for "R1 & R2" middle part change on 31-12-2025
         }
-
-        //private List<Marker> _markers = new List<Marker>();
-
-        //public class Marker
-        //{
-        //    public double Time { get; set; }
-        //    public string Label { get; set; }
-        //    public Color Color { get; set; }
-        //}
-
-
-
 
         private void btnS1_Click(object sender, EventArgs e)
         {
@@ -12219,15 +10031,6 @@ namespace SantronWinApp
             }
         }
 
-        //private void btnEventLE_Click(object sender, EventArgs e)
-        //{
-        //    _liveChart.AddMarker(_lastPlotT, "LE", Color.Green);
-
-        //    MultiClick(sender);
-        //}
-
-
-
         private void btnEventLE_Click(object sender, EventArgs e)
         {
             //Start Code For Add Delay Means If Click this button multiples time that time added only one marker 26-02-2026
@@ -12259,8 +10062,6 @@ namespace SantronWinApp
                 MultiClick(sender);
             }
         }
-
-
 
         private void btnEventLE3_Click(object sender, EventArgs e)
         {
@@ -12535,87 +10336,10 @@ namespace SantronWinApp
             }
         }
 
-
-
         private void btnRF_Click(object sender, EventArgs e)
         {
-            //using (var dlg = new OpenFileDialog { Filter = "UroTest (*.utt)|*.utt" })
-            //{
-            //    if (dlg.ShowDialog(this) != DialogResult.OK) return;
-
-            //    var viewer = new FormTestViewer(dlg.FileName);
-            //    viewer.Show();
-            //}
             OpenSavedTest();
         }
-
-
-
-        private void FreezeTestTime()
-        {
-
-            if (_testTimer != null)
-            {
-                _testTimer.Stop();
-
-            }
-
-            _isRecording = false;
-
-            if (_autoPauseInProgress) return;
-            _autoPauseInProgress = true;
-
-            _isPaused = true;
-            _pauseStartedAt = DateTime.Now;
-
-            _testTimer.Stop();
-
-            _orch?.StopProcessing();
-            _arm?.StopArm();
-
-            _pumpWasRunningBeforePause = _orch?.Pump?.IsRunning ?? false;
-            if (_pumpWasRunningBeforePause)
-                PumpStop();
-
-
-
-
-        }
-
-        private void ResumeTestTime()
-        {
-
-            if (_testTimer != null)
-            {
-                _testTimer.Start();
-            }
-
-            _isRecording = true;
-
-            _isPaused = false;
-
-            if (_pauseStartedAt.HasValue)
-            {
-                _pausedTime += (DateTime.Now - _pauseStartedAt.Value);
-                _pauseStartedAt = null;
-            }
-
-            if (_lblTimer != null)
-                _lblTimer.ForeColor = Color.Black;
-
-            _testTimer.Start();
-            UpdateTimerLabel();
-
-            _orch?.StartProcessing();
-
-            if (_pumpWasRunningBeforePause)
-                PumpStart();
-
-
-            _autoPauseInProgress = false;
-
-        }
-
         private void PauseForConfirmation()
         {
             _isPaused = true;
@@ -12911,8 +10635,6 @@ namespace SantronWinApp
             }
         }
 
-
-
         public void LoadFromFile(string filePath)
         {
             string section = "";
@@ -12946,32 +10668,6 @@ namespace SantronWinApp
                 }
             }
         }
-
-        // Holds currently saved test file path (for update)
-        private string _currentSavedTestPath;
-
-
-        //private void btnTestSave2_Click(object sender, EventArgs e)
-        //{
-        //    // Show confirmation message before Save the test
-        //    DialogResult result = MessageBox.Show(
-        //        "Test has been saved successfully!",
-        //        "Save Successful",
-        //        MessageBoxButtons.OK,
-        //        MessageBoxIcon.Information
-        //    );
-
-
-
-        //    //StopLiveTest(savePrompt: true);
-        //    //_lblTimer.Visible = false; 
-        //    //ButtonsShow();
-
-        //    //btnTestPause2.Enabled = false;
-        //    //btnTestStop2.Enabled = false;
-
-        //    //_isPlaybackMode = true;
-        //}
 
         private void btnTestSave2_Click(object sender, EventArgs e)
         {
@@ -13167,42 +10863,7 @@ namespace SantronWinApp
 
         }
 
-        //private void DeviceStatusPill_Paint(object sender, PaintEventArgs e)
-        //{
-        //    var pill = sender as ToolStripLabel;
-        //    if (pill == null) return;
-
-        //    Rectangle rect = new Rectangle(0, 0, pill.Width, pill.Height);
-
-        //    // rounded white background
-        //    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        //    using (var path = RoundedRect(rect, 8))
-        //    {
-        //        using (var bg = new SolidBrush(Color.White)) e.Graphics.FillPath(bg, path);
-        //        using (var pen = new Pen(Color.LightGray)) e.Graphics.DrawPath(pen, path);
-        //    }
-
-        //    // choose color/text by state
-        //    Color dotColor; string text;
-        //    switch (_deviceState)
-        //    {
-        //        case DeviceState.Connected: dotColor = Color.Green; text = "Device Connected"; break;
-
-        //        default: dotColor = Color.Red; text = "Device Disconnected"; break;
-        //    }
-
-        //    // draw dot + text
-        //    string dot = "●";
-        //    SizeF dotSize = e.Graphics.MeasureString(dot, pill.Font);
-        //    float y = (rect.Height - dotSize.Height) / 2f;
-
-        //    using (var b = new SolidBrush(dotColor))
-        //        e.Graphics.DrawString(dot, pill.Font, b, new PointF(10, y));
-
-        //    using (var b2 = new SolidBrush(Color.Black))
-        //        e.Graphics.DrawString(text, pill.Font, b2, new PointF(10 + dotSize.Width + 4, y));
-        //}
-
+        
         private void MainForm_Shown(object sender, EventArgs e)
         {
             // Sync again (just in case device state changed during startup)
@@ -13242,10 +10903,7 @@ namespace SantronWinApp
             }
         }
 
-
-        private DeviceState _lastPopupState;
-        private bool _suppressPopupOnStartup = true;
-
+        // Holds currently saved test file path (for update)
 
         //private DeviceState _lastPopupState = DeviceState.Disconnected;
 
@@ -13422,8 +11080,6 @@ namespace SantronWinApp
                 e.Graphics.DrawString(text, pill.Font, b2, new PointF(10 + dotSize.Width + 4, y));
         }
 
-
-
         // helper for rounded rectangles
         private static GraphicsPath RoundedRect(Rectangle r, int radius)
         {
@@ -13439,26 +11095,6 @@ namespace SantronWinApp
 
 
 
-
-
-
-        //private bool ProbeDaqOnce()
-        //{
-        //    DaqService daq = null;
-        //    try
-        //    {
-        //        daq = new DaqService();
-        //        daq.Start(AI_CONFIG);   // or "Dev1/ai0:6" if your HW requires it
-        //        try { daq.Stop(); } catch { }
-        //        try { daq.Dispose(); } catch { }
-        //        return true;
-        //    }
-        //    catch
-        //    {
-        //        try { if (daq != null) daq.Dispose(); } catch { }
-        //        return false;
-        //    }
-        //}
         private bool ProbeDaqOnce()
         {
             try
@@ -13657,9 +11293,6 @@ namespace SantronWinApp
 
 
         //Start Code For Add Mark Selected Location Work Only Saved Test on 15/10/2025
-        private bool _isMarkerPlacementMode = false;
-        private string _pendingMarkerLabel = "";
-        private Color _pendingMarkerColor = Color.Black;
         private void LiveChart_ChartClicked(double tSec)
         {
             if (_isMarkerPlacementMode)
@@ -13894,46 +11527,7 @@ namespace SantronWinApp
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         //Start This Code For Count Line add Means GP Mark Line
-        private bool _isMarkerPlacementModeForCount = false;
-
-
-
-        private string _pendingMarkerLabelForCount = "";
-
-
-
-        private Color _pendingMarkerColorForCount = Color.Black;
-
         private void LiveChart_ChartClickedForCount(double tSec)
         {
             if (_isMarkerPlacementModeForCount)
@@ -13970,27 +11564,6 @@ namespace SantronWinApp
         //End This Code For FS,FD,ND,SD,BC For Add Mark One time if Add So existing mark remove
 
 
-        //Start This Code For R1, R2 and M buttom code for remove the selected area ploting 
-        //private void Artifact_ChartClicked(double tSec)
-        //{
-        //    if (!_isMarkerPlacementMode) return;
-
-        //    _liveChart.RemoveMarkerByLabel(_pendingMarkerLabel);
-
-        //    _liveChart.AddMarker(tSec, _pendingMarkerLabel, _pendingMarkerColor);
-
-        //    if (_pendingMarkerLabel == "R1") _r1 = tSec;
-        //    else if (_pendingMarkerLabel == "R2") _r2 = tSec;
-
-        //    _isMarkerPlacementMode = false;
-        //    _pendingMarkerLabel = "";
-        //    Cursor = Cursors.Default;
-
-        //    _liveChart.ChartClicked -= Artifact_ChartClicked;
-
-        //    //MessageBox.Show("Marker added at selected location.","Marker Added", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        //}
-
 
         //Start R1 & R2 add Multiple and and delete Plotting code
         private class ArtifactRange
@@ -13999,9 +11572,7 @@ namespace SantronWinApp
             public double R2;
         }
 
-        private readonly List<ArtifactRange> _artifactRanges =
-            new List<ArtifactRange>();
-
+        private readonly List<ArtifactRange> _artifactRanges = new List<ArtifactRange>();
 
         private void Artifact_ChartClicked(double tSec)
         {
@@ -14081,54 +11652,6 @@ namespace SantronWinApp
             }
         }
         //Start this code for delete plotting using R1 & R2 for update and save
-
-
-
-
-
-
-
-        //Start This code work only Live Test old code
-        //private void PumpStart()
-        //{
-
-        //    if (_orch?.Pump == null) return;
-        //    _infusionRate = ClampInfusionRate(_infusionRate);
-        //    _orch.Pump.StartInfusion(_infusionRate);
-
-        //    UpdateInfusionLabel();
-        //}
-
-        //private void PumpSpeedUp()
-        //{
-        //    if (_orch?.Pump == null) return;
-        //    _infusionRate = ClampInfusionRate(_infusionRate + 1);
-        //    ApplyInfusionRateToPump();
-
-        //    UpdateInfusionLabel();
-        //}
-
-        //private void PumpSpeedDown()
-        //{
-        //    if (_orch?.Pump == null) return;
-        //    _infusionRate = ClampInfusionRate(_infusionRate - 1);
-        //    ApplyInfusionRateToPump();
-
-        //    UpdateInfusionLabel();
-        //}
-
-        //private void PumpStop()
-        //{
-        //    if (_orch?.Pump == null) return;
-        //    _orch.Pump.StopInfusion();
-
-        //    _lblInfusion.Text = $"Rate: 0 ml/min";
-        //}
-
-        //End This code work only Live Test
-
-
-
 
 
         //Start This code work for both Home screen & Live Test and Add "MainForm"  this two line _pump = new PumpController(1000, 1000); _infusionRate = 0;
@@ -14301,8 +11824,6 @@ namespace SantronWinApp
         }
         //END Pump Buttons for Home Screen
 
-
-
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             // Optional: reset the arm outputs and clean up
@@ -14328,13 +11849,6 @@ namespace SantronWinApp
             _arm.StopArm();
         }
 
-        //Comment on 13-02-2026 this code not have delay
-        //private void btnUppDIR_Click(object sender, EventArgs e)
-        //{
-        //    _arm.ToggleDirection();
-
-        //}
-
         private async void btnUppDIR_Click(object sender, EventArgs e)
         {
             //_arm.ToggleDirection();
@@ -14347,12 +11861,6 @@ namespace SantronWinApp
 
             btnUppDIR.Enabled = true;
         }
-
-        //Comment on 13-02-2026 this code not have delay
-        //private void btnUppSpeed_Click(object sender, EventArgs e)
-        //{
-        //    _arm.ToggleSpeed();
-        //}
 
         //This code added Delay for button click add on 13-02-2026
         private async void btnUppSpeed_Click(object sender, EventArgs e)
@@ -14383,12 +11891,6 @@ namespace SantronWinApp
 
         }
 
-        private TestMode _activemode;
-
-
-
-
-
         private HospitalAndDocterModel LoadHospitalAndDoctorSettings()
         {
             try
@@ -14417,8 +11919,6 @@ namespace SantronWinApp
                 return null;
             }
         }
-
-
 
         private PatientRecord GetPatinetData()
         {
@@ -14572,16 +12072,6 @@ namespace SantronWinApp
             return images;
         }
 
-
-
-        private HospitalAndDocterModel _hospitalSetup;
-        private PatientRecord _patientSetup;
-
-
-
-        private PrintPreviewDialog _previewDialog;
-        private PrintPreviewControl _previewControl;
-
         private void PrintPreview_Click(object sender, EventArgs e)
         {
             AutoSaveGraphTest_Click(sender, e);
@@ -14653,11 +12143,6 @@ namespace SantronWinApp
                 );
             }
         }
-
-
-
-
-
         private void AddCustomNavigationButtons(PrintPreviewDialog preview)
         {
             ToolStrip toolStrip = preview.Controls
@@ -14931,7 +12416,6 @@ namespace SantronWinApp
         }
 
 
-
         private void EnableMouseWheelPaging(PrintPreviewDialog dialog, PrintPreviewControl preview)
         {
             if (dialog == null || preview == null) return;
@@ -15020,9 +12504,6 @@ namespace SantronWinApp
                 }
             }
         }
-
-
-
 
         // ---- Start Code For DOWNLOAD WORD ----
         private void DownloadWord_Click(object sender, EventArgs e)
@@ -15135,24 +12616,7 @@ namespace SantronWinApp
 
             SetupReport();
 
-
-
             _currentPage = 1;
-
-
-
-            //using (PrintDialog dlg = new PrintDialog())
-            //{
-            //    dlg.Document = _doc;
-            //    dlg.AllowSomePages = false;
-            //    dlg.UseEXDialog = true; // 🔥 modern Windows dialog
-
-            //    if (dlg.ShowDialog(this) == DialogResult.OK)
-            //    {
-            //        _doc.Print(); // 🔥 Direct system print
-            //    }
-            //}
-
 
             using (PrintDialog dlg = new PrintDialog())
             {
@@ -15205,9 +12669,6 @@ namespace SantronWinApp
             }
             return base.ProcessCmdKey(ref msg, keyData);
         }
-
-
-        //
 
         private void SetupReport()
         {
@@ -15323,37 +12784,6 @@ namespace SantronWinApp
                 }
             }
 
-            //graphCfg.Samples = new List<ReportSample>();
-
-            //if (_recorded != null && _recorded.Count > 0)
-            //{
-            //    // Baseline per channel from first sample so each channel starts from 0 in print preview
-            //    double[] base0 = null;
-            //    if (_recorded[0].Values != null)
-            //        base0 = (double[])_recorded[0].Values.Clone();
-
-            //    for (int i = 0; i < _recorded.Count; i++)
-            //    {
-            //        var r = _recorded[i];
-            //        double[] copy = (r.Values != null) ? (double[])r.Values.Clone() : null;
-
-            //        if (copy != null && base0 != null)
-            //        {
-            //            int n = Math.Min(copy.Length, base0.Length);
-            //            for (int ch = 0; ch < n; ch++)
-            //            {
-            //                // Skip NaN/Infinity to avoid polluting output
-            //                double b = base0[ch];
-            //                if (!double.IsNaN(b) && !double.IsInfinity(b))
-            //                    copy[ch] = copy[ch] - b;
-            //            }
-            //        }
-
-            //        graphCfg.Samples.Add(new ReportSample { T = r.T, Values = copy });
-            //    }
-            //}
-
-
             graphCfg.TestDef = _currentTestDef;
             graphCfg.ActiveIndices = (_activeIndices != null && _activeIndices.Length > 0)
                 ? (int[])_activeIndices.Clone()
@@ -15370,10 +12800,6 @@ namespace SantronWinApp
                     .ToList();
             }
 
-            //  System.Diagnostics.Debug.WriteLine("PRINT _recorded first sample: " +
-            // string.Join(",", _recorded[0].Values.Select(v => v.ToString("0.##"))));
-
-
             _printer = new LegacyUroReportPrinter(data, graphCfg);
 
             _currentPage = 1;
@@ -15386,14 +12812,7 @@ namespace SantronWinApp
                 else
                     _currentPage = 1;
             };
-            //_doc.PrintPage += delegate (object sender, PrintPageEventArgs e)
-            //{
-            //    _printer.PrintPage(sender, e, _currentPage);
-            //    if (e.HasMorePages) _currentPage++;
-            //    else _currentPage = 1;
-            //};
         }
-
 
         //This code for Review mode any change on test so auto save test and Print Report
         private void AutoSaveGraphTest_Click(object sender, EventArgs e)
@@ -15425,8 +12844,6 @@ namespace SantronWinApp
                 MessageBox.Show("Failed to update test.\n" + ex.Message);
             }
         }
-
-
         private static TestMode GetModeFromTestName(string testName)
         {
             if (string.IsNullOrWhiteSpace(testName))

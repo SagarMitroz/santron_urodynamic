@@ -27,16 +27,12 @@ namespace SantronReports
         private StringFormat _stringFormat;
         private Point _cursor;
 
-
-        //Pratik Sir Print Preview Code
+        public int HorzRes => (int)_g.VisibleClipBounds.Width;
+        public int VertRes => (int)_g.VisibleClipBounds.Height;
 
         public GdiContext(Graphics g)
         {
             _g = g ?? throw new ArgumentNullException(nameof(g));
-
-            // Do NOT do: _g.ResetTransform();
-            // Do NOT do: _g.ResetClip();
-            // Do NOT force PageUnit/PageScale here (leave as-is)
 
             _g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             _g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
@@ -61,9 +57,6 @@ namespace SantronReports
             if (image == null) return;
             _g.DrawImage(image, destRect);
         }
-
-        public int HorzRes => (int)_g.VisibleClipBounds.Width;
-        public int VertRes => (int)_g.VisibleClipBounds.Height;
 
         public Size MeasureText(string text)
         {
@@ -122,154 +115,7 @@ namespace SantronReports
             _g.FillRectangle(brush, r);
         }
 
-        // Put these helpers INSIDE GdiContext class (anywhere, e.g. above FillRectangle)
-        //private static bool IsFinite(float v) => !(float.IsNaN(v) || float.IsInfinity(v));
-
-        //private static bool IsFinite(RectangleF r) =>
-        //    IsFinite(r.X) && IsFinite(r.Y) && IsFinite(r.Width) && IsFinite(r.Height);
-
-        //private static RectangleF IntersectF(RectangleF a, RectangleF b)
-        //{
-        //    float left = Math.Max(a.Left, b.Left);
-        //    float top = Math.Max(a.Top, b.Top);
-        //    float right = Math.Min(a.Right, b.Right);
-        //    float bottom = Math.Min(a.Bottom, b.Bottom);
-
-        //    if (!IsFinite(left) || !IsFinite(top) || !IsFinite(right) || !IsFinite(bottom))
-        //        return RectangleF.Empty;
-
-        //    if (right <= left || bottom <= top)
-        //        return RectangleF.Empty;
-
-        //    return RectangleF.FromLTRB(left, top, right, bottom);
-        //}
-
-        //// REPLACE your existing FillRectangle with this
-        //public void FillRectangle(Brush brush, Rectangle r)
-        //{
-        //    if (brush == null || _g == null) return;
-        //    if (r.Width <= 0 || r.Height <= 0) return;
-
-        //    try
-        //    {
-        //        // Prefer ClipBounds (more stable than VisibleClipBounds in metafile/preview)
-        //        Rectangle clip = System.Drawing.Rectangle.Empty;
-
-        //        try
-        //        {
-        //            RectangleF cb = _g.ClipBounds;
-
-        //            // Validate clip bounds
-        //            bool valid =
-        //                !float.IsNaN(cb.X) && !float.IsNaN(cb.Y) &&
-        //                !float.IsNaN(cb.Width) && !float.IsNaN(cb.Height) &&
-        //                !float.IsInfinity(cb.X) && !float.IsInfinity(cb.Y) &&
-        //                !float.IsInfinity(cb.Width) && !float.IsInfinity(cb.Height) &&
-        //                cb.Width > 0 && cb.Height > 0;
-
-        //            if (valid)
-        //            {
-        //                // Convert safely without Rectangle.Round (avoids overflow/invalid rounding)
-        //                int left = (int)Math.Floor(cb.Left);
-        //                int top = (int)Math.Floor(cb.Top);
-        //                int right = (int)Math.Ceiling(cb.Right);
-        //                int bottom = (int)Math.Ceiling(cb.Bottom);
-
-        //                // Guard against crazy values (metafile can sometimes report huge bounds)
-        //                const int LIM = 200000;
-        //                left = Math.Max(-LIM, Math.Min(LIM, left));
-        //                top = Math.Max(-LIM, Math.Min(LIM, top));
-        //                right = Math.Max(-LIM, Math.Min(LIM, right));
-        //                bottom = Math.Max(-LIM, Math.Min(LIM, bottom));
-
-        //                int w = right - left;
-        //                int h = bottom - top;
-
-        //                if (w > 0 && h > 0)
-        //                    clip = new Rectangle(left, top, w, h);
-        //            }
-        //        }
-        //        catch
-        //        {
-        //            clip = System.Drawing.Rectangle.Empty;
-        //        }
-
-        //        if (!clip.IsEmpty)
-        //        {
-        //            Rectangle rr = System.Drawing.Rectangle.Intersect(r, clip);
-        //            if (rr.Width <= 0 || rr.Height <= 0) return;
-
-        //            _g.FillRectangle(brush, rr);
-        //        }
-        //        else
-        //        {
-        //            // No reliable clip -> draw directly (still protected by try/catch)
-        //            _g.FillRectangle(brush, r);
-        //        }
-        //    }
-        //    catch (ArgumentException)
-        //    {
-        //        // swallow drawing failures (print preview/metafile can be strict)
-        //    }
-        //    catch (System.Runtime.InteropServices.ExternalException)
-        //    {
-        //        // swallow GDI+ edge cases during print/preview
-        //    }
-        //}
-
-        //// REPLACE your existing Rectangle(...) with this (same safety)
-        //public void Rectangle(Rectangle r)
-        //{
-        //    if (_g == null) return;
-        //    if (r.Width <= 0 || r.Height <= 0) return;
-
-        //    try
-        //    {
-        //        RectangleF rf = new RectangleF(r.X, r.Y, r.Width, r.Height);
-        //        if (!IsFinite(rf)) return;
-
-        //        RectangleF clipF = _g.VisibleClipBounds;
-
-        //        if (!IsFinite(clipF) || clipF.Width <= 0 || clipF.Height <= 0)
-        //        {
-        //            _g.DrawRectangle(_pen, r);
-        //            return;
-        //        }
-
-        //        RectangleF rr = IntersectF(rf, clipF);
-        //        if (rr.Width <= 0 || rr.Height <= 0) return;
-
-        //        // DrawRectangle has no RectangleF overload; convert safely by flooring/ceiling.
-        //        int x = (int)Math.Floor(rr.X);
-        //        int y = (int)Math.Floor(rr.Y);
-        //        int w = (int)Math.Ceiling(rr.Width);
-        //        int h = (int)Math.Ceiling(rr.Height);
-
-        //        if (w <= 0 || h <= 0) return;
-
-        //        _g.DrawRectangle(_pen, new Rectangle(x, y, w, h));
-        //    }
-        //    catch (Exception ex) when (
-        //        ex is ArgumentException ||
-        //        ex is System.Runtime.InteropServices.ExternalException ||
-        //        ex is OverflowException)
-        //    {
-        //        // Ignore drawing failures in preview/print pipeline
-        //    }
-        //}
-
-
-
-        //Old Code
-
-        //public void TextOutLeft(int x, int y, string text)
-        //{
-        //    var saved = _stringFormat.Alignment;
-        //    _stringFormat.Alignment = StringAlignment.Near;
-        //    _g.DrawString(text ?? string.Empty, _font, _textBrush, x, y, _stringFormat);
-        //    _stringFormat.Alignment = saved;
-        //}
-
+      
         //Code Copy text in pdf
 
         //New Code Add on 02-02-2026 Code For Report Text Copy
@@ -369,60 +215,21 @@ namespace SantronReports
         private readonly ReportDataPrint _data;
         private readonly MultiChannelLiveChart _chart;
         private readonly ReportGraphConfig _graph;
-
-     
-
         private int _totalPages = 0;
-
         private int _currentStaticIndex = 0;
         private bool _inImageMode = false;
 
-        // ===================== PATCH: Dynamic page numbering =====================
-        private int _printPageCounter = 0;          // 0-based counter across the *actual* printed pages
-        private bool _printStateInitialized = false;
-
-        // Total pages must include expanded image pages (page #5)
-        private int ComputeTotalPagesForCurrentJob()
-        {
-            int basePages = (_pagesToPrint != null && _pagesToPrint.Count > 0) ? _pagesToPrint.Count : 1;
-
-            bool hasImagesPage = (_pagesToPrint != null && _pagesToPrint.Contains(5));
-            if (!hasImagesPage)
-                return basePages;
-
-            // If "page 5" is part of the flow, it may expand to multiple physical pages.
-            // Count it as at least 1 page even if there are 0 images.
-            int imagePages = Math.Max(1, _totalImagePages);
-
-            // Replace the single placeholder "5" with actual imagePages
-            return basePages - 1 + imagePages;
-        }
-        // =================== END PATCH: Dynamic page numbering ===================
-
-
-        public LegacyUroReportPrinter(ReportDataPrint data)
-        {
-            _data = data ?? throw new ArgumentNullException(nameof(data));
-        }
-
-       
-
         private List<int> _pagesToPrint;
 
-        public LegacyUroReportPrinter(ReportDataPrint data, ReportGraphConfig graph)
-        {
-            _data = data;
-            _graph = graph;
+        // ===================== PATCH: Dynamic page numbering =====================
+        private int _printPageCounter = 0;        
+        private bool _printStateInitialized = false;
 
-            _pagesToPrint = ResolvePagesForTest(_data.TestName);
 
-            if (_data.CapturedImages != null && _data.CapturedImages.Count > 0)
-            {
-                _totalImagePages =
-                    (_data.CapturedImages.Count + PerPageImages - 1) / PerPageImages;
-            }
-        }
 
+
+
+        //Classes 
         public sealed class ReportSample
         {
             public double T;
@@ -450,6 +257,43 @@ namespace SantronReports
             public bool BlueBold;
         }
 
+
+
+        // Total pages must include expanded image pages (page #5)
+        private int ComputeTotalPagesForCurrentJob()
+        {
+            int basePages = (_pagesToPrint != null && _pagesToPrint.Count > 0) ? _pagesToPrint.Count : 1;
+
+            bool hasImagesPage = (_pagesToPrint != null && _pagesToPrint.Contains(5));
+            if (!hasImagesPage)
+                return basePages;
+
+            int imagePages = Math.Max(1, _totalImagePages);
+
+            // Replace the single placeholder "5" with actual imagePages
+            return basePages - 1 + imagePages;
+        }
+        // =================== END PATCH: Dynamic page numbering ===================
+
+
+        public LegacyUroReportPrinter(ReportDataPrint data)
+        {
+            _data = data ?? throw new ArgumentNullException(nameof(data));
+        }
+
+        public LegacyUroReportPrinter(ReportDataPrint data, ReportGraphConfig graph)
+        {
+            _data = data;
+            _graph = graph;
+
+            _pagesToPrint = ResolvePagesForTest(_data.TestName);
+
+            if (_data.CapturedImages != null && _data.CapturedImages.Count > 0)
+            {
+                _totalImagePages =
+                    (_data.CapturedImages.Count + PerPageImages - 1) / PerPageImages;
+            }
+        }
 
 
         private List<int> ResolvePagesForTest(string testName)
@@ -485,10 +329,6 @@ namespace SantronReports
             var pd = sender as PrintDocument;
             bool isPreview = pd != null && pd.PrintController is PreviewPrintController;
 
-            // ---------------------------------------------------------------------
-            // FORCE A4 + deterministic margins for BOTH: e.PageSettings + DefaultPageSettings
-            // This is the key to make PrintPreview match actual print.
-            // ---------------------------------------------------------------------
             try
             {
                 // A4 in hundredths of an inch: 8.27" × 11.69" => 827 × 1169
@@ -543,8 +383,6 @@ namespace SantronReports
                 pages++;
                 _totalPages = pages;
             }
-
-
 
             // Refresh target after forcing margins/paper
             target = e.MarginBounds;
@@ -668,317 +506,6 @@ namespace SantronReports
             }
             g.Restore(state);
         }
-
-
-        //Start this code For PDF Download show all page same 
-
-        //public void BeginPrint(object sender, PrintEventArgs e)
-        //{
-        //    var pd = sender as PrintDocument;
-        //    if (pd == null) return;
-
-        //    var a4 = new PaperSize("A4", 827, 1169)
-        //    {
-        //        RawKind = (int)PaperKind.A4
-        //    };
-
-        //    var fixedMargins = new Margins(10, 10, 10, 10);
-
-        //    pd.DefaultPageSettings.PaperSize = a4;
-        //    pd.DefaultPageSettings.Margins = fixedMargins;
-        //    pd.OriginAtMargins = false;
-
-        //    _printStateInitialized = false;
-        //}
-
-
-        //public void PrintPage(object sender, PrintPageEventArgs e, int pageIndex)
-        //{
-        //    var pd = sender as PrintDocument;
-        //    bool isPreview = pd?.PrintController is PreviewPrintController;
-
-        //    // ==================== FORCE A4 CONSISTENTLY ====================
-        //    //try
-        //    //{
-        //    //    var a4 = new PaperSize("A4", 827, 1169)
-        //    //    {
-        //    //        RawKind = (int)PaperKind.A4
-        //    //    };
-
-        //    //    var fixedMargins = new Margins(10, 10, 10, 10);
-
-        //    //    if (pd != null)
-        //    //    {
-        //    //        pd.DefaultPageSettings.PaperSize = a4;
-        //    //        pd.DefaultPageSettings.Margins = fixedMargins;
-        //    //        pd.OriginAtMargins = false; // 🔴 IMPORTANT FIX
-        //    //    }
-
-        //    //    e.PageSettings.PaperSize = a4;
-        //    //    e.PageSettings.Margins = fixedMargins;
-        //    //}
-        //    //catch { }
-
-        //    Rectangle target = e.MarginBounds;
-
-        //    // ================= INIT PRINT STATE (UNCHANGED) =================
-        //    if (!_printStateInitialized || (pageIndex == 0 && _printPageCounter != 0))
-        //    {
-        //        _currentStaticIndex = 0;
-        //        _imagePageIndex = 0;
-        //        _inImageMode = false;
-
-        //        _printPageCounter = 0;
-        //        _totalPages = ComputeTotalPagesForCurrentJob();
-        //        _printStateInitialized = true;
-        //    }
-
-        //    if (_totalPages <= 0)
-        //        _totalPages = 6;
-
-        //    // ================= LOGICAL COORDINATE SYSTEM =================
-        //    const int LOGICAL_W = 1000;
-        //    const int LOGICAL_H = 1414;
-
-        //    Graphics g = e.Graphics;
-        //    var state = g.Save();
-
-        //    // 🔴 RESET EVERYTHING — CRITICAL
-        //    g.ResetTransform();
-        //    g.PageUnit = GraphicsUnit.Display;
-
-        //    g.SmoothingMode = SmoothingMode.AntiAlias;
-        //    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        //    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        //    g.TextRenderingHint = isPreview
-        //        ? TextRenderingHint.ClearTypeGridFit
-        //        : TextRenderingHint.SingleBitPerPixelGridFit;
-
-        //    // ================= STABLE SCALE =================
-        //    float sx = target.Width / (float)LOGICAL_W;
-        //    float sy = target.Height / (float)LOGICAL_H;
-        //    //float scale = Math.Min(sx, sy); // 🔴 prevents stretch drift
-
-        //    g.TranslateTransform(target.Left, target.Top);
-        //    //g.ScaleTransform(scale, scale);
-        //    g.ScaleTransform(sx, sy);
-
-        //    // 🔴 CLIP IN LOGICAL SPACE
-        //    g.SetClip(new Rectangle(0, 0, LOGICAL_W, LOGICAL_H));
-
-        //    // ================= LOGICAL MARGINS =================
-        //    Rectangle logicalRect = new Rectangle(
-        //        50,    // left
-        //        10,    // top
-        //        LOGICAL_W - 70,
-        //        LOGICAL_H - 110
-        //    );
-
-        //    using (var ctx = new GdiContext(g))
-        //    {
-        //        int pageNumber = _inImageMode
-        //            ? 5
-        //            : _pagesToPrint[_currentStaticIndex];
-
-        //        switch (pageNumber)
-        //        {
-        //            case 1: DrawFillingPhasePage(ctx, g, logicalRect); break;
-        //            case 2: ResetVoidingCache(); DrawVoidingPhasePage(ctx, g, logicalRect); break;
-        //            case 3: DrawMarkerPage(ctx, g, logicalRect); break;
-        //            case 4: DrawConclusionPage(ctx, g, logicalRect); break;
-        //            case 5: DrawCapturedImagesPaged(ctx, g, logicalRect, e); break;
-        //            case 7: DrawUroflowmetryTestPage(ctx, g, logicalRect); break;
-        //            case 8: DrawUPPTestPage(ctx, g, logicalRect); break;
-        //        }
-
-        //        // ================= PAGING LOGIC (UNCHANGED) =================
-        //        if (pageNumber == 5)
-        //        {
-        //            if (_imagePageIndex < _totalImagePages - 1)
-        //            {
-        //                _imagePageIndex++;
-        //                _inImageMode = true;
-        //                _printPageCounter++;
-        //                e.HasMorePages = true;
-        //                g.Restore(state);
-        //                return;
-        //            }
-
-        //            _imagePageIndex = 0;
-        //            _inImageMode = false;
-        //        }
-
-        //        _currentStaticIndex++;
-        //        _printPageCounter++;
-        //        e.HasMorePages = _currentStaticIndex < _pagesToPrint.Count;
-
-        //        if (!e.HasMorePages)
-        //            _printStateInitialized = false;
-        //    }
-
-        //    g.Restore(state);
-        //}
-
-        //End this code For PDF Download show all page same 
-
-
-
-
-
-
-
-
-
-        //Start Code For Show images on report print and Image Marker Details add on 09-01-2026 
-
-        //const int ImageWidth = 850;
-        //const int ImageHeight = 625;
-        //const int RowGap = 160;
-        //const int TableStartGap = 100;
-        const int ImageWidth = 180;        // logical units
-        const int ImageHeight = 150;
-        const int RowGap = 40;
-        const int TableStartGap = 40;
-
-        //private int _imagePageIndex = 0;
-        //private const int PerPageImages = 4;
-        //private int _totalImagePages = 0;
-
-        private int DrawMarkerHeader(GdiContext ctx, int left, int top, Size fSize)
-        {
-            int colGap = 17;
-
-            int c0 = left;                 // Marker
-            int c1 = left + colGap * 15;    // Time
-            int c2 = left + colGap * 20;   // Pves
-            int c3 = left + colGap * 25;   // Pabd
-            int c4 = left + colGap * 30;   // Pdet
-            int c5 = left + colGap * 35;   // Vinf
-            int c6 = left + colGap * 40;   // Qvol
-            int c7 = left + colGap * 45;   // Qura
-            int c8 = left + colGap * 50;   // EMG
-
-            int r = 2;
-
-            // -----------------------------
-            // Title
-            // -----------------------------
-            //ctx.SetFont(_data.FontFamily, 12f, FontStyle.Bold);
-            //ctx.SetTextColor(Color.Red);
-            //ctx.TextOutLeft(left, top + fSize.Height * r, "Markers Details");
-            //r += 2;
-
-            // =====================================================
-            // 🔷 GRADIENT HEADER : "Markers Details"
-            // =====================================================
-            int rowH = fSize.Height + 8;
-            int titleHeight = rowH + 6;
-
-            int headerLeft = left - 4;
-            int headerTop = top + fSize.Height * r - 30;
-
-            // header width based on last column
-            int headerWidth = (c8 + colGap * 4) - headerLeft;
-
-            // remove any active pen to avoid border lines
-            ctx.SetPen(Color.Transparent, 0);
-
-            using (LinearGradientBrush headerBrush =
-                new LinearGradientBrush(
-                    new Rectangle(headerLeft, headerTop, headerWidth, titleHeight),
-                    Color.White,          // left
-                    Color.FromArgb(210, 225, 240),
-                    //Color.RoyalBlue,      // right
-                    LinearGradientMode.Horizontal))
-            {
-                ctx.FillRectangle(
-                    headerBrush,
-                    new Rectangle(headerLeft, headerTop, headerWidth, titleHeight)
-                );
-            }
-
-            ctx.SetFont(_data.FontFamily, 12f, FontStyle.Bold);
-            ctx.SetTextColor(Color.Black);
-
-            ctx.TextOutLeft(
-                headerLeft + 12,
-                headerTop + (titleHeight - fSize.Height) / 2,
-                "Marker Details"
-            );
-
-            // move rows below header
-            r += 2;
-            top += titleHeight + fSize.Height;
-            r = 1;
-            // =====================================================
-
-            // -----------------------------
-            // Header row
-            // -----------------------------
-            ctx.SetFont(_data.FontFamily, 11f, FontStyle.Bold);
-            ctx.SetTextColor(Color.Black);
-
-            ctx.TextOutLeft(c0, top + fSize.Height * r, "Marker");
-            ctx.TextOutLeft(c1, top + fSize.Height * r, "Time");
-            ctx.TextOutLeft(c2, top + fSize.Height * r, "Pves");
-            ctx.TextOutLeft(c3, top + fSize.Height * r, "Pabd");
-            ctx.TextOutLeft(c4, top + fSize.Height * r, "Pdet");
-            ctx.TextOutLeft(c5, top + fSize.Height * r, "Vinf");
-            ctx.TextOutLeft(c6, top + fSize.Height * r, "Qvol");
-            ctx.TextOutLeft(c7, top + fSize.Height * r, "Qura");
-            ctx.TextOutLeft(c8, top + fSize.Height * r, "EMG");
-            r++;
-
-            // -----------------------------
-            // Units row
-            // -----------------------------
-            ctx.SetFont(_data.FontFamily, 10f, FontStyle.Regular);
-
-            ctx.TextOutLeft(c0, top + fSize.Height * r, "Type");
-            ctx.TextOutLeft(c1, top + fSize.Height * r, "mins.");
-            ctx.TextOutLeft(c2, top + fSize.Height * r, "cmH2O");
-            ctx.TextOutLeft(c3, top + fSize.Height * r, "cmH2O");
-            ctx.TextOutLeft(c4, top + fSize.Height * r, "cmH2O");
-            ctx.TextOutLeft(c5, top + fSize.Height * r, "ml");
-            ctx.TextOutLeft(c6, top + fSize.Height * r, "ml");
-            ctx.TextOutLeft(c7, top + fSize.Height * r, "ml/sec");
-            ctx.TextOutLeft(c8, top + fSize.Height * r, "uV");
-            r += 2;
-
-            return top + fSize.Height * r;
-        }
-
-
-        private void DrawImageMarkerRow(GdiContext ctx, int left, int top, MarkerRow m)
-        {
-            int colGap = 17;
-
-            //int c0 = left;
-            int c1 = left + colGap * 2;
-            int c2 = left + colGap * 7;
-            int c3 = left + colGap * 12;
-            int c4 = left + colGap * 17;
-            int c5 = left + colGap * 22;
-            int c6 = left + colGap * 27;
-            int c7 = left + colGap * 32;
-            int c8 = left + colGap * 37;
-
-            ctx.SetFont(_data.FontFamily, 10f, FontStyle.Regular);
-
-            //ctx.TextOutLeft(c0, top, m.Type);             // I-1 / I-2 / I-3
-            ctx.TextOutLeft(c1, top, m.TimeText);
-            ctx.TextOutLeft(c2, top, m.Pves.ToString("F0"));
-            ctx.TextOutLeft(c3, top, m.Pabd.ToString("F0"));
-            ctx.TextOutLeft(c4, top, m.Pdet.ToString("F0"));
-            ctx.TextOutLeft(c5, top, m.Vinf.ToString("F0"));
-            ctx.TextOutLeft(c6, top, m.Qvol.ToString("F0"));
-            ctx.TextOutLeft(c7, top, m.Qura.ToString("F0"));
-            ctx.TextOutLeft(c8, top, m.EMG.ToString("F0"));
-        }
-
-
-
-
 
 
 
