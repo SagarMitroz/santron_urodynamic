@@ -25,6 +25,7 @@ using NationalInstruments;
 using NationalInstruments.DAQmx;
 using SantronChart;
 using SantronReports;
+using SantronWinApp.Helper;
 using SantronWinApp.IO;
 using SantronWinApp.Processing;
 using static MarkerService;
@@ -293,7 +294,23 @@ namespace SantronWinApp
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
 
-       
+        // --- System-check thresholds (demo defaults; load from SysSetup if you have it) ---
+        //private int P0 = 120;   // pressure low threshold for Pves
+        //private int P1 = 120;   // pressure low threshold for Pabd/Pirp
+        //private int P6 = 120;   // pressure low threshold for Pura
+        //private int JF = 3500;  // uroflow Jar Full threshold
+        //private int ChangeBottle = 600; // infusion bottle missing/change threshold
+        //private int U1 = 100;   // UPP not connected
+        //private int UH = 1800;  // UPP arm pulled high threshold
+
+        //// Fixed bounds from the spec (counts domain)
+        //private const int RAW_MIN_SMALL = 10;
+        //private const int RAW_MIN_20 = 20;
+        //private const int RAW_MIN_25 = 25;
+        //private const int RAW_PRESSURE_FAULT = 2050;
+        //private const int RAW_FAULT_3900 = 3900;
+        //private const int RAW_EMG_FAULT = 16000;
+
         // Thresholds per Error Document (verify system-setup may override)
         private const double RAW_MIN_20 = 20.0;
         private const double RAW_MIN_SMALL = 10.0;   // doc: "greater than 10"
@@ -301,6 +318,15 @@ namespace SantronWinApp
         private const double RAW_PRESSURE_FAULT = 2050.0; // doc: >2050 => faulty
         private const double RAW_FAULT_3900 = 3900.0;
         private const double RAW_EMG_FAULT = 16000.0; // doc: >16000 => EMG faulty
+
+        // Other system-setup variables — make sure these are populated from settings
+        //private double P0 = 50.0; 
+        //private double P1 = 50.0;
+        //private double P6 = 50.0;
+        //private double JF = 3000.0;         
+        //private double ChangeBottle = 500.0; 
+        //private double U1 = 10.0;          
+        //private double UH = 2000.0;         
 
         private double P0 = 50.0;
         private double P1;
@@ -387,6 +413,27 @@ namespace SantronWinApp
         private int BladderColor;
         private int GPColor;
         private int ResponseColor;
+
+
+        //public MainForm()
+        //{
+        //    InitializeComponent();
+        //    Constants();
+
+        //    //EnsureGraphReady();
+        //    var setup = LoadScaleAndColorModel("DefaultSetup");
+        //    _testMgr = new TestChannelManager(setup);
+        //    channelSettings = LoadChannelSettings();
+
+        //    this.WindowState = FormWindowState.Maximized;
+        //    this.Text = "Santron PC based Urodynamics USB, India Visit us at www.santronmeditronic.com, email:santronmeditronic@gmail.com";
+
+
+        //    this.AutoScaleMode = AutoScaleMode.Dpi;
+        //    this.AutoSize = false;
+        //    this.MinimumSize = new Size(900, 600);
+        //}
+
 
         private IPumpController _pump;
         public MainForm()
@@ -682,37 +729,8 @@ namespace SantronWinApp
         //    this.Controls.Clear();
         //    this.Controls.Add(panel);
         //}
-        private MenuStrip _menuStrip;
 
-        private void CreateMenuStrip()
-        {
-            var menuBuilder = new MainMenuBuilder(
-                this,
-                showPatientsAction: () => btnShowPatients_Click(this, EventArgs.Empty),
-                openPatientListAction: () =>
-                {
-                    var patientListForm = new PatientList();
-                    ScreenDimOverlay.ShowDialogWithDim(patientListForm, alpha: 150);
-                },
-                printReportAction: () => PrintReport_Click(this, EventArgs.Empty),
-                printPreviewAction: () => PrintPreview_Click(this, EventArgs.Empty),
-                togglePumpPanelAction: () => PumpButton(this, EventArgs.Empty),
-                getDpiScaleFunc: () => GetDpiScale(this)
-            );
 
-            menuStrip1 = menuBuilder.CreateMenuStrip();
-            this.Controls.Add(menuStrip1);
-            this.MainMenuStrip = menuStrip1;
-        }
-
-        // Add this helper method if it doesn't exist
-        private static float GetDpiScale(Control c)
-        {
-            using (var g = c.CreateGraphics())
-            {
-                return g.DpiX / 96f;
-            }
-        }
         private Panel patientCardsPanel;
         private ToolTip toolTip1 = new ToolTip();
         private void MainForm_Load(object sender, EventArgs e)
@@ -725,7 +743,7 @@ namespace SantronWinApp
 
             HideMainContent();
             CreateMenuStrip();
-           // menuStrip1.Renderer = new CustomMenuRenderer();
+            menuStrip1.Renderer = new CustomMenuRenderer();
 
             _screenMinutes = LoadScreenMinutes();
 
@@ -1174,33 +1192,7 @@ namespace SantronWinApp
             }
         }
 
-        //private SystemSetupModel GetSystemSetData()
-        //{
-        //    try
-        //    {
-        //        string folder = Path.Combine(Application.StartupPath, "Saved Data", "SystemSetup");
-
-        //        if (!Directory.Exists(folder))
-        //            return null;
-
-        //        string[] files = Directory.GetFiles(folder, "*.dat");
-
-        //        if (files.Length == 0)
-        //            return null;
-
-        //        string filePath = files[0];
-
-        //        byte[] encrypted = File.ReadAllBytes(filePath);
-        //        string json = CryptoHelper.Decrypt(encrypted);
-
-        //        return JsonSerializer.Deserialize<SystemSetupModel>(json);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show("Load error: " + ex.Message);
-        //        return null;
-        //    }
-        //}
+        
 
         private SystemSetupModel _SystemSetup;
 
@@ -1291,7 +1283,67 @@ namespace SantronWinApp
             _liveChart.Start();
         }
 
-        
+        //private void LoadGraph()
+        //{
+        //    LoadSystemSetup();
+
+        //    int pumpConst1 = 1500;
+        //    int pumpConst2 = 2000;
+        //    int defaultInfusion = 20;
+
+        //    // If SystemSetup loaded → use dynamic values
+        //    if (_SystemSetup != null)
+        //    {
+        //        pumpConst1 = Convert.ToInt32(_SystemSetup.Constant1);
+        //        pumpConst2 = Convert.ToInt32(_SystemSetup.Constant2);
+        //        defaultInfusion = Convert.ToInt32(_SystemSetup.DefualInfusion);
+        //    }
+
+        //    _infusionRate = ClampInfusionRate(defaultInfusion);
+
+        //    bool isResume = _resumeArmed;
+
+
+        //    DetachOrch();
+        //    // Ensure orchestrator exists and is wired to chart
+
+        //        var daq = new DaqService();
+        //        var cal = new Calibration(_profile);
+        //        if (_signalProcessor == null || !isResume)
+        //        _signalProcessor = new SignalProcessor(cal, sampleRateHz: 400.0, displayHz: 4.0);
+        //    IPumpController pump = new PumpController(pumpConst1, pumpConst2);
+        //        _orch = new TestOrchestrator(daq, _signalProcessor, pump, new SysSetupStore());
+
+
+        //    AttachOrch();
+        //    try { _orch.Start(); } catch { }
+
+        //    if (_currentTestDef == null && _testMgr != null)
+        //        _currentTestDef = _testMgr.GetDefinition(currenttest);
+
+        //    _activemode = GetModeFromTestName(currenttest);
+        //    _signalProcessor.SetMode(_activemode);
+
+        //    _signalProcessor.SetFlowWindowFromConstant(_profile.Constants[6]);
+
+        //    _signalProcessor.SetEmgWindowMs(300);
+        //    _signalProcessor.SetSmoothingAlpha(0.08);
+
+        //    if (!isResume)
+        //        _signalProcessor.ZeroNow();
+
+        //    _liveChart.SetMinutesPerScreen(_screenMinutes);
+        //    _liveChart.UsePixelBuckets = true;
+        //    _liveChart.DrawEnvelopeInLive = false; // you can set true if you want the min/max envelope in live view
+
+        //    // _liveChart.SetFps(30);
+        //    _liveChart.SetVisibleDuration(_screenMinutes * 60.0); //60
+        //    _liveChart.Start();
+        //}
+
+
+
+
         // Start Code For Show the Dianamic Constants Values on 28/10/2025
         private string GetSystemSetupFolder()
         {
@@ -3813,14 +3865,7 @@ namespace SantronWinApp
                                  System.Globalization.CultureInfo.InvariantCulture, out newMax))
                 return;
 
-            if (laneName.Equals("EMG", StringComparison.OrdinalIgnoreCase))
-            {
-                _liveChart.SetChannelScaleByName(laneName, -newMax, newMax);
-            }
-            else
-            {
-                _liveChart.SetChannelScaleByName(laneName, 0, newMax);
-            }
+            _liveChart.SetChannelScaleByName(laneName, 0, newMax);
 
             // Start Code For Change First Three ComboBox Value if Change "PVES" Channel ComboBox on 09/10/2025 At 10:54 Night  
             string[] pressureGroup = { "Pves", "Pabd", "Pirp", "Pura", "Pdet", "Pclo", "Prpg" };
@@ -3850,14 +3895,7 @@ namespace SantronWinApp
                         }
 
                         // Update chart scale for that lane
-                        if (laneName.Equals("EMG", StringComparison.OrdinalIgnoreCase))
-                        {
-                            _liveChart.SetChannelScaleByName(laneName, -newMax, newMax);
-                        }
-                        else
-                        {
-                            _liveChart.SetChannelScaleByName(laneName, 0, newMax);
-                        }
+                        _liveChart.SetChannelScaleByName(lane, 0, newMax);
                     }
                 }
             }
@@ -8578,7 +8616,199 @@ namespace SantronWinApp
 
 
 
-     
+        private void CreateMenuStrip()
+        {
+            menuStrip1 = new MenuStrip();
+
+            float dpi = GetDpiScale(this);
+            menuStrip1.LayoutStyle = ToolStripLayoutStyle.HorizontalStackWithOverflow; // reflow + overflow
+            menuStrip1.CanOverflow = true;
+            menuStrip1.Stretch = true;                  // fill width
+            menuStrip1.ImageScalingSize = new Size((int)(16 * dpi), (int)(16 * dpi));
+            menuStrip1.Padding = new Padding((int)(8 * dpi), (int)(2 * dpi), (int)(8 * dpi), (int)(2 * dpi));
+            menuStrip1.AutoSize = true;                 // let height adjust with DPI
+            menuStrip1.MinimumSize = new Size(0, (int)(32 * dpi));
+
+            menuStrip1.BackColor = Color.FromArgb(0, 73, 165);
+            menuStrip1.ForeColor = Color.White;
+            menuStrip1.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            menuStrip1.AutoSize = false;
+            // menuStrip1.Height = 52;
+            menuStrip1.Dock = DockStyle.Top;
+            menuStrip1.RenderMode = ToolStripRenderMode.Professional;
+            menuStrip1.Renderer = new CustomMenuRenderer();
+
+
+            int logoW = Math.Max(72, Math.Min(145, (int)(this.ClientSize.Width * 0.42))); // 12% of form, clamped
+            int logoH = (int)(22 * dpi);
+            int iconW = Math.Max(32, Math.Min(38, (int)(this.ClientSize.Width * 0.12))); // 12% of form, clamped
+            int iconH = (int)(23 * dpi);
+            //string imagePath = Path.Combine(Application.StartupPath, "Images", "SantronLogo.png");
+            string imagePath = AppPathManager.GetFilePath("Images", "SantronLogo.png");
+            try
+            {
+                Image logoImage = Properties.Resources.SantronLogo;
+
+
+                if (logoImage != null)
+                {
+                    // Maintain aspect ratio
+                    float scale = Math.Min((float)logoW / logoImage.Width, (float)logoH / logoImage.Height);
+                    int newW = (int)(logoImage.Width * scale);
+                    int newH = (int)(logoImage.Height * scale);
+
+                    Bitmap resizedLogo = new Bitmap(newW, newH);
+                    using (Graphics g = Graphics.FromImage(resizedLogo))
+                    {
+                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                        g.DrawImage(logoImage, 0, 0, newW, newH);
+                    }
+
+                    ToolStripLabel logoLabel = new ToolStripLabel
+                    {
+                        Image = resizedLogo,
+                        ImageScaling = ToolStripItemImageScaling.None, // prevent menu strip from scaling again
+                        Margin = new Padding(10, 2, 20, 2),
+                        Padding = new Padding(2, 1, 2, 0),
+                        IsLink = true
+                    };
+
+                    // logoLabel.Click += (s, e) => { btnShowPatients_Click(s, e); };
+
+                    menuStrip1.Items.Add(logoLabel);
+                }
+                else
+                {
+                    // fallback if logo is missing
+                    ToolStripLabel logoText = new ToolStripLabel
+                    {
+                        Text = "Santron Meditronic",
+                        ForeColor = Color.White,
+                        Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                        Margin = new Padding(15, 5, 25, 5),
+                        IsLink = true
+                    };
+
+                    logoText.Click += (s, e) => { btnShowPatients_Click(s, e); };
+
+                    menuStrip1.Items.Add(logoText);
+                }
+            }
+            catch
+            {
+                // extra safety fallback
+                ToolStripLabel logoText = new ToolStripLabel
+                {
+                    Text = "Santron Meditronic",
+                    ForeColor = Color.White,
+                    Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                    Margin = new Padding(15, 5, 25, 5),
+                    IsLink = true
+                };
+
+                logoText.Click += (s, e) => { btnShowPatients_Click(s, e); };
+
+                menuStrip1.Items.Add(logoText);
+            }
+            menuStrip1.ShowItemToolTips = true;
+
+            ToolStripItem patientButton = CreateIconButton("\uE160", Color.FromArgb(0, 73, 165), Color.White, new Size(iconW, iconH), ButtonForPatient);
+            patientButton.Name = "patientButton";
+            patientButton.ToolTipText = "Add New Patients"; // Name to show on hover
+            menuStrip1.Items.Add(patientButton);
+
+            ToolStripItem menuButton = CreateIconButton("\uE8B7", Color.FromArgb(0, 73, 165), Color.White, new Size(iconW, iconH), OpenMenuItem_Click);
+            menuButton.Name = "menuButton";
+            menuButton.ToolTipText = "Opne File"; // Name to show on hover
+            menuStrip1.Items.Add(menuButton);
+
+            ToolStripItem settingsButton = CreateIconButton("\uE749", Color.FromArgb(0, 73, 165), Color.White, new Size(iconW, iconH), PrintReport_Click);
+            settingsButton.Name = "settingsButton";
+            settingsButton.ToolTipText = "Print Button";
+            menuStrip1.Items.Add(settingsButton);
+
+            ToolStripItem infoButton = CreateIconButton("\uE8A7", Color.FromArgb(0, 73, 165), Color.White, new Size(iconW, iconH), PrintPreview_Click);
+            infoButton.Name = "infoButton";
+            infoButton.ToolTipText = "Print Preview";
+            menuStrip1.Items.Add(infoButton);
+
+
+
+            _deviceStatusPill = new ToolStripLabel
+            {
+                Alignment = ToolStripItemAlignment.Right,
+                AutoSize = false,
+                Size = new Size(210, 30),
+                Margin = new Padding(8, 4, 4, 4)
+            };
+            // IMPORTANT: hook a named method (don’t capture an out-of-scope variable)
+            // _deviceStatusPill.Paint += DeviceStatusPill_Paint;
+            _deviceStatusPill.Paint += new PaintEventHandler(DeviceStatusPill_Paint);
+            menuStrip1.Items.Add(_deviceStatusPill);
+            //string[] menuItems = { "File", "View", "Setup", "Markers", "Infusion", "Test Recording", "Windows", "Help" };
+            string[] menuItems = { "File", "Setup", "Help", "Pump-Arm" }; //"Pump-Arm"
+            for (int i = 0; i < menuItems.Length; i++)
+            {
+                ToolStripMenuItem menuItem = CreateMenuItem(menuItems[i]);
+                menuItem.Margin = new Padding(10, 2, 10, 2);
+                menuItem.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+                menuItem.Name = menuItems[i] + "Menu";
+
+
+                switch (menuItems[i])
+                {
+                    case "File": AddFileMenuItems(menuItem); break;
+                    //case "View": AddViewMenuItems(menuItem); break;
+                    case "Setup": AddSetupMenuItems(menuItem); break;
+                    //case "Markers": AddMarkersMenuItems(menuItem); break;
+                    //case "Infusion": AddInfusionMenuItems(menuItem); break;
+                    //case "Test Recording": AddTestRecordingMenuItems(menuItem); break;
+                    //case "Windows": AddWindowsMenuItems(menuItem); break;
+                    case "Help": AddHelpMenuItems(menuItem); break;
+                    case "Pump-Arm":
+                        menuItem.Name = "PumpArmMenu";
+                        menuItem.Click += PumpButton;
+                        break;
+
+
+
+                        //case "⛯":
+                        //    menuItem.Alignment = ToolStripItemAlignment.Right;
+                        //    AddSettingMenuItems(menuItem);
+                        //    menuItem.ToolTipText = "Setting";
+                        //    break;
+                }
+
+                menuStrip1.Items.Add(menuItem);
+            }
+
+
+            ToolStripButton CreateIconButton(string iconChar, Color backColor, Color foreColor, Size size, EventHandler onClick)
+            {
+                var btn = new ToolStripButton
+                {
+                    Text = iconChar,
+                    Font = new Font("Segoe MDL2 Assets", 12F),
+                    AutoSize = false,
+                    Size = size,
+                    BackColor = backColor,
+                    ForeColor = foreColor,
+                    DisplayStyle = ToolStripItemDisplayStyle.Text,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Margin = new Padding(2, 0, 2, 0)
+                };
+                if (onClick != null)
+                    btn.Click += onClick;
+
+                return btn;
+            }
+
+
+            this.Controls.Add(menuStrip1);
+            this.MainMenuStrip = menuStrip1;
+        }
 
 
         private void PumpButton(object sender, EventArgs e)
@@ -8593,14 +8823,152 @@ namespace SantronWinApp
         private bool _isDeviceConnected = false;
 
 
+        private Bitmap CreateBullet(Color color)
+        {
+            int size = 12; // image size
+            Bitmap bmp = new Bitmap(size, size);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                int d = 6; // bullet diameter
+                g.FillEllipse(new SolidBrush(color), (size - d) / 2, (size - d) / 2, d, d);
+            }
+            return bmp;
+        }
 
-      
-       
+        private void AddSettingMenuItems(ToolStripMenuItem settingMenu)
+        {
+            Image bullet = CreateBullet(Color.Black);
 
-        // All existing menu methods remain the same...
-        
-       
-        
+            ToolStripMenuItem viewItem = new ToolStripMenuItem("View") { Image = bullet };
+            AddViewMenuItems(viewItem);
+
+            ToolStripMenuItem markersItem = new ToolStripMenuItem("Markers") { Image = bullet };
+            AddMarkersMenuItems(markersItem);
+
+            ToolStripMenuItem infusionItem = new ToolStripMenuItem("Infusion") { Image = bullet };
+            AddInfusionMenuItems(infusionItem);
+
+            ToolStripMenuItem testItem = new ToolStripMenuItem("Test Recording") { Image = bullet };
+            AddTestRecordingMenuItems(testItem);
+
+            ToolStripMenuItem windowItem = new ToolStripMenuItem("Windows") { Image = bullet };
+            AddWindowsMenuItems(windowItem);
+
+            settingMenu.DropDownItems.Add(viewItem);
+            settingMenu.DropDownItems.Add(markersItem);
+            settingMenu.DropDownItems.Add(infusionItem);
+            settingMenu.DropDownItems.Add(testItem);
+            settingMenu.DropDownItems.Add(windowItem);
+        }
+
+        private void AddToolStripSeparator(ToolStrip targetToolStrip, int height = 35)
+        {
+            ToolStripSeparator sep = new ToolStripSeparator();
+            sep.AutoSize = false;
+            sep.Width = 4;
+            sep.Height = height;
+            sep.Margin = new Padding(1, 0, 1, 30);
+
+            sep.Paint += (s, e) =>
+            {
+                e.Graphics.Clear(targetToolStrip.BackColor);
+                using (Pen p = new Pen(Color.Gray, 2))
+                {
+                    int x = sep.Width / 2;
+                    e.Graphics.DrawLine(p, x, 2, x, sep.Height - 2);
+                }
+            };
+
+            targetToolStrip.Items.Add(sep);
+        }
+
+
+        private ToolStripControlHost CreateGroup(string heading, params ToolStripButton[] buttons)
+        {
+            // Outer panel holds heading + buttons row
+            var panel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                AutoSize = true,
+                Padding = new Padding(0),
+                Margin = new Padding(0)
+            };
+
+            // Heading
+            var lbl = new Label
+            {
+                Text = heading,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = Color.DarkBlue,
+                AutoSize = true,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Top
+            };
+            panel.Controls.Add(lbl);
+
+            // Button row
+            var buttonPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                AutoSize = true,
+                Margin = new Padding(0),
+                Padding = new Padding(0),
+                WrapContents = false
+            };
+
+            foreach (var tsBtn in buttons)
+            {
+                var btn = new Button
+                {
+                    Text = tsBtn.Text,
+                    BackColor = tsBtn.BackColor,
+                    ForeColor = tsBtn.ForeColor,
+                    Size = tsBtn.Size,
+                    Font = tsBtn.Font,
+                    FlatStyle = FlatStyle.Flat,
+                    Margin = new Padding(1),
+                    Padding = new Padding(1),
+                    AutoSize = false,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    UseCompatibleTextRendering = true
+                };
+
+                btn.FlatAppearance.BorderSize = 0;
+
+
+                if (tsBtn.Tag is EventHandler clickHandler)
+                    btn.Click += clickHandler;
+
+                buttonPanel.Controls.Add(btn);
+            }
+
+            panel.Controls.Add(buttonPanel);
+
+
+            return new ToolStripControlHost(panel);
+        }
+
+
+        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRectanglePath(Rectangle rect, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
+            path.AddArc(rect.X + rect.Width - radius, rect.Y, radius, radius, 270, 90);
+            path.AddArc(rect.X + rect.Width - radius, rect.Y + rect.Height - radius, radius, radius, 0, 90);
+            path.AddArc(rect.X, rect.Y + rect.Height - radius, radius, radius, 90, 90);
+            path.CloseAllFigures();
+            return path;
+        }
+
+        private ToolStripMenuItem CreateMenuItem(string text)
+        {
+            return new ToolStripMenuItem(text)
+            {
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 9, FontStyle.Regular)
+            };
+        }
 
         private void Button_CM_Click(object sender, EventArgs e)
         {
@@ -8612,6 +8980,314 @@ namespace SantronWinApp
         {
             Form2 twoForm = new Form2();
             twoForm.Show();
+        }
+
+
+        // All existing menu methods remain the same...
+        private void AddFileMenuItems(ToolStripMenuItem fileMenu)
+        {
+            Image bullet = CreateBullet(Color.Black);
+
+            ToolStripMenuItem newMenuItem = new ToolStripMenuItem("New") { Image = bullet };
+            newMenuItem.ShortcutKeys = Keys.Control | Keys.N;
+            newMenuItem.Click += (s, args) =>
+            {
+                //PatientList patientForm = new PatientList();
+                //patientForm.Show();
+
+                var patientWithTestForm = new PatientWithTestForm();
+                ScreenDimOverlay.ShowDialogWithDim(patientWithTestForm, alpha: 150);
+
+                //var patientForm = new PatientList();
+                //ScreenDimOverlay.ShowDialogWithDim(patientForm, alpha: 150);
+            };
+
+            ToolStripMenuItem openMenuItem = new ToolStripMenuItem("Open..") { Image = bullet };
+            openMenuItem.ShortcutKeys = Keys.Control | Keys.O;
+            openMenuItem.Click += OpenMenuItem_Click;
+
+            ToolStripMenuItem printSetupMenuItem = new ToolStripMenuItem("Print Setup...") { Image = bullet };
+            printSetupMenuItem.Click += PrintSetupMenuItem_Click;
+
+            ToolStripMenuItem exitMenuItem = new ToolStripMenuItem("Exit") { Image = bullet };
+            exitMenuItem.Click += (s, args) => Application.Exit();
+
+            fileMenu.DropDownItems.Add(newMenuItem);
+            fileMenu.DropDownItems.Add(openMenuItem);
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add(printSetupMenuItem);
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add(exitMenuItem);
+        }
+
+        private void AddViewMenuItems(ToolStripMenuItem viewMenu)
+        {
+            ToolStripMenuItem toolBarMenuItem = new ToolStripMenuItem("Toolbar") { CheckOnClick = true, Checked = true };
+            ToolStripMenuItem statusBarMenuItem = new ToolStripMenuItem("Status Bar") { CheckOnClick = true, Checked = true };
+
+            viewMenu.DropDownItems.Add(toolBarMenuItem);
+            viewMenu.DropDownItems.Add(statusBarMenuItem);
+        }
+
+        private void AddSetupMenuItems(ToolStripMenuItem setupMenu)
+        {
+            Image bullet = CreateBullet(Color.Black);
+
+            ToolStripMenuItem systemMenuItem = new ToolStripMenuItem("System") { Image = bullet };
+            //systemMenuItem.Click += (s, args) =>
+            //{
+            //    var systemForm = new PasswordForm();
+            //    ScreenDimOverlay.ShowDialogWithDim(systemForm, alpha: 150);
+            //};
+
+            systemMenuItem.Click += (s, args) =>
+            {
+                var passwordForm = new PasswordForm();
+
+                // Subscribe to the SystemSetupSaved event
+                passwordForm.SystemSetupSaved += (sender, e) =>
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        // Call the reload method that runs Constants()
+                        ReloadSystemSetupAndConstants();
+
+                        // Show a message to confirm reload (optional)
+                        System.Diagnostics.Debug.WriteLine("System Setup reloaded at " + DateTime.Now);
+                    }));
+                };
+
+                ScreenDimOverlay.ShowDialogWithDim(passwordForm, alpha: 150);
+            };
+
+            ToolStripMenuItem hospitalMenuItem = new ToolStripMenuItem("Hospital / Doctor Information") { Image = bullet };
+            hospitalMenuItem.Click += (s, args) =>
+            {
+                var systemForm = new HospitalAndDoctorInfoSetUp();
+                ScreenDimOverlay.ShowDialogWithDim(systemForm, alpha: 150);
+            };
+
+            //ToolStripMenuItem pressureMenuItem = new ToolStripMenuItem("Scale And Color Setup") { Image = bullet };
+            //pressureMenuItem.Click += (s, args) =>
+            //{
+            //    var pressureStudyForm = new ScaleAndColorSteup();
+            //    ScreenDimOverlay.ShowDialogWithDim(pressureStudyForm, alpha: 150);
+            //};
+
+            //Start Code For "ScaleANDColorSetup" Screen if update any data so immediately Reflect no need to restart application 26-02-2025
+            ToolStripMenuItem pressureMenuItem = new ToolStripMenuItem("Scale And Color Setup") { Image = bullet };
+            pressureMenuItem.Click += (s, args) =>
+            {
+                var pressureStudyForm = new ScaleAndColorSteup();
+
+                // Subscribe to the DataSaved event
+                pressureStudyForm.DataSaved += (sender, e) =>
+                {
+                    this.BeginInvoke(new Action(() =>
+                    {
+                        ReloadScaleAndColorSetup();
+                    }));
+                };
+
+                ScreenDimOverlay.ShowDialogWithDim(pressureStudyForm, alpha: 150);
+            };
+            //END Code For "ScaleANDColorSetup" Screen if update any data so immediately Reflect no need to restart application 26-02-2025
+
+            ToolStripMenuItem patientHistoryMenuItem = new ToolStripMenuItem("Patient Database") { Image = bullet };
+            patientHistoryMenuItem.Click += (s, args) =>
+            {
+                var patientHostoryForm = new PatientHistory();
+                ScreenDimOverlay.ShowDialogWithDim(patientHostoryForm, alpha: 150);
+            };
+
+            ToolStripMenuItem docterMenuItem = new ToolStripMenuItem("Doctors") { Image = bullet };
+            docterMenuItem.Click += (s, args) =>
+            {
+                DocterList dicterForm = new DocterList();
+                dicterForm.Show();
+            };
+
+            ToolStripMenuItem symptomsMenuItem = new ToolStripMenuItem("Symptoms") { Image = bullet };
+            symptomsMenuItem.Click += (s, args) =>
+            {
+                SymptomsList symptomsForm = new SymptomsList();
+                symptomsForm.Show();
+            };
+
+            ToolStripMenuItem LangaugeMenuItem = new ToolStripMenuItem("Language") { Image = bullet };
+            LangaugeMenuItem.Click += (s, args) =>
+            {
+                var languageForm = new LanguageForm();
+                ScreenDimOverlay.ShowDialogWithDim(languageForm, alpha: 150);
+            };
+
+            ToolStripMenuItem VideoDeviceMenuItem = new ToolStripMenuItem("Video Device") { Image = bullet };
+            VideoDeviceMenuItem.Click += (s, args) =>
+            {
+                var videoDeviceForm = new VideoDevice();
+                ScreenDimOverlay.ShowDialogWithDim(videoDeviceForm, alpha: 150);
+            };
+
+            setupMenu.DropDownItems.Add(systemMenuItem);
+            setupMenu.DropDownItems.Add(hospitalMenuItem);
+            setupMenu.DropDownItems.Add(pressureMenuItem);
+            setupMenu.DropDownItems.Add(patientHistoryMenuItem);
+
+            setupMenu.DropDownItems.Add(docterMenuItem);
+            setupMenu.DropDownItems.Add(symptomsMenuItem);
+            setupMenu.DropDownItems.Add(LangaugeMenuItem);
+            setupMenu.DropDownItems.Add(VideoDeviceMenuItem);
+        }
+
+        private void AddMarkersMenuItems(ToolStripMenuItem markersMenu)
+        {
+            Image bullet = CreateBullet(Color.Black);
+
+            ToolStripMenuItem bladderItem = new ToolStripMenuItem("Bladder Sensation") { Image = bullet };
+            bladderItem.DropDownItems.Add(BulletItem("First Sensation (FS)"));
+            bladderItem.DropDownItems.Add(BulletItem("First Desire (FD)"));
+            bladderItem.DropDownItems.Add(BulletItem("Normal Desire (ND)"));
+            bladderItem.DropDownItems.Add(BulletItem("Strong Desire (SD)"));
+            bladderItem.DropDownItems.Add(BulletItem("Bladder Capacity (BC)"));
+            bladderItem.DropDownItems.Add(BulletItem("End Filling Phase"));
+            bladderItem.DropDownItems.Add(BulletItem("Start of Voiding"));
+
+            ToolStripMenuItem generalItem = new ToolStripMenuItem("General") { Image = bullet };
+            generalItem.DropDownItems.Add(BulletItem("Leak (L)"));
+            generalItem.DropDownItems.Add(BulletItem("Cough (C)"));
+            generalItem.DropDownItems.Add(BulletItem("Laugh (La)"));
+            generalItem.DropDownItems.Add(BulletItem("Artifact (X)"));
+            generalItem.DropDownItems.Add(BulletItem("General Purpose"));
+            generalItem.DropDownItems.Add(BulletItem("Standing"));
+            generalItem.DropDownItems.Add(BulletItem("Supine"));
+            generalItem.DropDownItems.Add(BulletItem("Sitting"));
+
+            markersMenu.DropDownItems.Add(bladderItem);
+            markersMenu.DropDownItems.Add(generalItem);
+        }
+
+        private ToolStripMenuItem BulletItem(string text)
+        {
+            return new ToolStripMenuItem(text) { Image = CreateBullet(Color.Black) };
+        }
+
+        private void AddInfusionMenuItems(ToolStripMenuItem infusionMenu)
+        {
+            infusionMenu.DropDownItems.Add(BulletItem("Start Infusion (STI)"));
+            infusionMenu.DropDownItems.Add(BulletItem("Stop Infusion (STP)"));
+            infusionMenu.DropDownItems.Add(new ToolStripSeparator());
+            infusionMenu.DropDownItems.Add(BulletItem("Increase Rate"));
+            infusionMenu.DropDownItems.Add(BulletItem("Decrease Rate"));
+        }
+
+        private void AddTestRecordingMenuItems(ToolStripMenuItem testRecordingMenu)
+        {
+            testRecordingMenu.DropDownItems.Add(BulletItem("Start"));
+            testRecordingMenu.DropDownItems.Add(BulletItem("Pause"));
+            testRecordingMenu.DropDownItems.Add(BulletItem("Stop"));
+        }
+
+        private void AddWindowsMenuItems(ToolStripMenuItem windowsMenu)
+        {
+            windowsMenu.DropDownItems.Add(BulletItem("New Window"));
+            windowsMenu.DropDownItems.Add(BulletItem("Cascade"));
+            windowsMenu.DropDownItems.Add(BulletItem("Tile"));
+            windowsMenu.DropDownItems.Add(BulletItem("Arrange Icons"));
+            windowsMenu.DropDownItems.Add(new ToolStripSeparator());
+            windowsMenu.DropDownItems.Add(BulletItem("Current Open"));
+        }
+
+        private void AddHelpMenuItems(ToolStripMenuItem helpMenu)
+        {
+            Image bullet = CreateBullet(Color.Black);
+
+            ToolStripMenuItem aboutMenuItem = new ToolStripMenuItem("About Santron UroDynamics...") { Image = bullet };
+            aboutMenuItem.Click += (s, args) =>
+            {
+                SantronVersion aboutForm = new SantronVersion();
+                aboutForm.Show();
+            };
+
+            ToolStripMenuItem helpMenuItem = new ToolStripMenuItem("Help Topics") { Image = bullet };
+            helpMenuItem.Enabled = false;
+            helpMenuItem.Click += (s, args) => MessageBox.Show("Read Only", "Help");
+
+            helpMenu.DropDownItems.Add(aboutMenuItem);
+            helpMenu.DropDownItems.Add(helpMenuItem);
+        }
+
+
+
+        private void OpenMenuItem_Click(object sender, EventArgs e)
+        {
+
+            var patientListForm = new PatientList();
+            ScreenDimOverlay.ShowDialogWithDim(patientListForm, alpha: 150);
+
+        }
+
+        private void PrintSetupMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var pageSetup = new PageSetupDialog())
+            {
+                pageSetup.PageSettings = new PageSettings();
+                pageSetup.PrinterSettings = new PrinterSettings();
+
+                if (pageSetup.ShowDialog(this) == DialogResult.OK)
+                {
+                    // Handle page setup changes
+                }
+            }
+        }
+
+
+
+        public class CustomMenuRenderer : ToolStripProfessionalRenderer
+        {
+
+            protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+            {
+                Rectangle rect = new Rectangle(Point.Empty, e.Item.Size);
+
+                // Check if the item is in a DropDown (submenu)
+                bool isInDropDown = e.ToolStrip is ToolStripDropDownMenu;
+
+                if (e.Item.Selected)
+                {
+                    if (isInDropDown)
+                    {
+                        // Hover background for submenu items
+                        e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(100, 150, 255)), rect);
+                    }
+                    else
+                    {
+                        // Hover background for main menu items
+                        e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(0, 73, 165)), rect);
+                    }
+                }
+                else
+                {
+                    if (!isInDropDown)
+                    {
+                        // Non-hover main menu background fix (prevent white flash)
+                        e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(0, 73, 165)), rect);
+                    }
+                }
+            }
+
+            protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
+            {
+                if (e.ToolStrip is MenuStrip)
+                {
+                    // Blue for top-level MenuStrip
+                    e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(0, 73, 165)), e.AffectedBounds);
+                }
+                else
+                {
+                    // White for dropdown submenus
+                    e.Graphics.FillRectangle(Brushes.White, e.AffectedBounds);
+                }
+            }
         }
 
         private void ButtonGoLive_Click(object sender, EventArgs e)
@@ -12447,7 +13123,14 @@ namespace SantronWinApp
         }
 
         // 2) DPI helper
-        
+        static float GetDpiScale(Control c)
+        {
+            using (var g = c.CreateGraphics())
+            {
+                return g.DpiX / 96f;
+            }
+        }
+
         private void btnEventRF_Click(object sender, EventArgs e)
         {
 
